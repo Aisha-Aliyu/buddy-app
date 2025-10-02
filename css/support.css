@@ -1,0 +1,199 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f9f9f9;
+  padding: 20px;
+}
+
+.community-container {
+  max-width: 500px;
+  margin: auto;
+}
+
+h2 {
+  text-align: center;
+  color: #835288;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+textarea {
+  padding: 15px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  resize: none;
+  height: 100px;
+  margin-bottom: 10px;
+}
+
+button {
+  background: #835288;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #a77aaa;
+}
+
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.post {
+  background: white;
+  padding: 15px;
+  border-radius: 15px;
+  display: flex;
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  animation: slideIn 0.5s ease forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.post img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.post-content {
+  flex: 1;
+}
+
+.post-content .mood {
+  font-size: 12px;
+  font-weight: bold;
+  color: #835288;
+  margin-top: 5px;
+}
+
+.post-content .timestamp {
+  font-size: 12px;
+  color: #888;
+  margin-top: 3px;
+}
+
+.back-button {
+  text-decoration: none;
+  font-size: 22px;
+  color: #333;
+  font-weight: bold;
+}
+
+
+
+
+.inspiration-body {
+  background: #fcf7ff;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 20px;
+}
+
+.inspiration-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.inspiration-header .back-button {
+  font-size: 22px;
+  color: #835288;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.inspiration-main {
+  text-align: center;
+}
+
+.quote-box {
+  background: #fff;
+  border-left: 6px solid #835288;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.quote-text {
+  font-size: 18px;
+  color: #333;
+  font-style: italic;
+}
+
+.quote-author {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #888;
+}
+
+.new-quote-btn {
+  padding: 12px 25px;
+  background: #835288;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 30px;
+}
+
+.new-quote-btn:hover {
+  background: #a77aaa;
+}
+
+.story-section {
+  margin-top: 30px;
+  text-align: left;
+}
+
+.story-section h3 {
+  font-size: 18px;
+  color: #835288;
+  margin-bottom: 10px;
+}
+
+.stories {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.story {
+  background: #fff;
+  padding: 15px 20px;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.story p {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.story .name {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}

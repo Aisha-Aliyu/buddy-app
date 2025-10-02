@@ -1,0 +1,200 @@
+/* General */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #fdfdfd;
+  color: #222;
+  transition: background 0.3s, color 0.3s;
+}
+
+body.dark {
+  background: #121212;
+  color: #f1f1f1;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #8b698d;
+  color: #fff;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: white;
+  cursor: pointer;
+}
+
+/* Dark mode toggle */
+.toggle-container {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  margin-left: 5px;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: 20px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background-color: white;
+  left: 2px;
+  bottom: 2px;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #6a4c6f;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* Profile */
+main {
+  padding: 20px;
+}
+
+.profile-header {
+  text-align: center;
+}
+
+.avatar {
+  position: relative;
+  display: inline-block;
+}
+
+.avatar img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #8b698d;
+  object-fit: cover;
+}
+
+.avatar input[type="file"] {
+  display: block;
+  margin: 8px auto;
+  font-size: 0.8rem;
+}
+
+#username {
+  margin-top: 10px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: text;
+}
+
+#bio {
+  margin-top: 8px;
+  width: 80%;
+  max-width: 400px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: none;
+  min-height: 40px;
+  font-size: 1rem;
+}
+
+#bio:focus {
+  outline: none;
+  border-color: #8b698d;
+}
+
+/* Account Info */
+.profile-info, .profile-settings, .danger-zone {
+  margin-top: 25px;
+  padding: 15px;
+  border-radius: 8px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+}
+
+body.dark .profile-info,
+body.dark .profile-settings,
+body.dark .danger-zone {
+  background: #1e1e1e;
+  border: 1px solid #444;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+input[type="email"], input[type="password"] {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  margin-top: 15px;
+  padding: 10px;
+  border: none;
+  background: #8b698d;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #6a4c6f;
+}
+
+.logout-btn {
+  background: #e67e22;
+  width: 100%;
+}
+
+.logout-btn:hover {
+  background: #d35400;
+}
+
+/* Danger Zone */
+.danger-zone h3 {
+  color: #e74c3c;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  width: 100%;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+}

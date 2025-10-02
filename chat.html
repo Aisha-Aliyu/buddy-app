@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chat – Buddy AI Mental Health Assistant</title>
+<meta name="description" content="Chat with Buddy, your AI-powered companion for mental health. Vent freely, get empathetic responses, and feel supported anytime you need." />
+<meta name="author" content="Aisha Aliyu" />
+
+<!-- ✅ Open Graph (for LinkedIn / Facebook) -->
+<meta property="og:title" content="Buddy – Your Mental Health AI Assistant" />
+<meta property="og:description" content="Venting space, emergency contacts, and friendly AI-powered chat designed to support your mental well-being." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://buddy-app.vercel.app" />
+<meta property="og:image" content="https://buddy-app.vercel.app/assets/favicon/android-chrome-512x512.png" />
+
+<!-- ✅ Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Buddy – AI Mental Health App" />
+<meta name="twitter:description" content="A safe space to vent, talk, and feel supported with Buddy – your AI-powered mental health companion." />
+<meta name="twitter:image" content="https://buddy-app.vercel.app/assets/favicon/android-chrome-512x512.png" />
+
+<!-- ✅ Favicons -->
+<link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
+<link rel="manifest" href="assets/favicon/site.webmanifest">
+<link rel="mask-icon" href="assets/favicon/favicon.ico" color="#8b698d">
+<meta name="theme-color" content="#8b698d" />
+  <link rel="stylesheet" href="css/chat.css" />
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="chat-header">
+  <button class="back-btn" onclick="goBack()">←</button>
+  <img src="assets/images/buddy.PNG" class="buddy-icon" alt="Buddy" />
+  <h2>Buddy</h2>
+  </div>
+
+    <!-- ✅ Chat box to display messages -->
+    <div class="chat-box" id="chat-box">
+      
+    </div>
+
+    <!-- ✅ Input area sticks to bottom -->
+    <div class="chat-input-area">
+      <textarea id="user-input" rows="1" placeholder="Type your message..."></textarea>
+      <button onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+
+
+
+  <script>
+
+    const textarea = document.getElementById('user-input');
+
+textarea.addEventListener('input', () => {
+  textarea.style.height = 'auto';  // Reset the height
+  textarea.style.height = `${textarea.scrollHeight}px`;  // Set to scroll height
+});
+  </script>
+
+  <script src="js/chat.js"></script>
+</body>
+</html>

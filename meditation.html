@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Guided Meditation</title>
+  <link rel="stylesheet" href="css/meditation.css" />
+</head>
+<body class="meditation-body">
+  <div class="meditation-header">
+    <a href="homepage.html" class="back-btn">←</a>
+    <h2>Guided Meditation</h2>
+  </div>
+
+  <p class="intro">Choose a session to relax, reset, or refocus ✨</p>
+
+  <div class="meditation-list">
+    <!-- Meditation Item -->
+    <div class="meditation-card">
+      <img src="assets/images/relaxation.avif" alt="Relaxation" />
+      <div class="meditation-info">
+        <h3>Relaxation</h3>
+        <p>Duration: 15 mins</p>
+        <audio id="audio1" src="assets/sounds/relax.mp3"></audio>
+        <button onclick="toggleAudio('audio1', this)">▶</button>
+      </div>
+    </div>
+
+    <div class="meditation-card">
+      <img src="assets/images/sleep.avif" alt="Sleep" />
+      <div class="meditation-info">
+        <h3>Deep Sleep</h3>
+        <p>Duration: 12 mins</p>
+        <audio id="audio2" src="assets/sounds/deepsleep.mp3"></audio>
+        <button onclick="toggleAudio('audio2', this)">▶</button>
+      </div>
+    </div>
+
+    <div class="meditation-card">
+      <img src="assets/images/focus.avif" alt="Focus" />
+      <div class="meditation-info">
+        <h3>Focus Boost</h3>
+        <p>Duration: 19 mins</p>
+        <audio id="audio3" src="assets/sounds/focus.mp3"></audio>
+        <button onclick="toggleAudio('audio3', this)">▶</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/meditation.js"></script>
+</body>
+</html>

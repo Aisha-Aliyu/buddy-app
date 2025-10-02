@@ -1,0 +1,86 @@
+.meditation-body {
+  background: #f2f2f2;
+  font-family: 'Arial', sans-serif;
+  padding: 20px;
+}
+
+.meditation-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  text-decoration: none;
+  font-size: 22px;
+  color: #333;
+  font-weight: bold;
+}
+
+.meditation-header h2 {
+  font-size: 20px;
+  color: #444;
+}
+
+.intro {
+  font-size: 14px;
+  margin-bottom: 15px;
+  color: #666;
+}
+
+.meditation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.meditation-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+  display: flex;
+  gap: 15px;
+  padding: 10px;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.meditation-card:hover {
+  transform: scale(1.02);
+}
+
+.meditation-card img {
+  width: 90px;
+  height: 90px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.meditation-info h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #222;
+}
+
+.meditation-info p {
+  font-size: 13px;
+  color: #777;
+  margin: 5px 0 10px;
+}
+
+.meditation-info button {
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #835288;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.meditation-info button:hover {
+  background-color: #a87bb7;
+}

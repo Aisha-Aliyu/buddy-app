@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wall of Thought</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="mindful-body">
+  <header class="mindful-header">
+    <a href="../games/mood-paint.html" class="back-button">←</a>
+    <h2>Wall of Thought</h2>
+  </header>
+
+  <main class="gallery" id="gallery"></main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const gallery = document.getElementById("gallery");
+      const saved = JSON.parse(localStorage.getItem("moodPaintGallery")) || [];
+
+      if (saved.length === 0) {
+        gallery.innerHTML = "<p>No saved paintings yet 🎨</p>";
+      } else {
+        saved.reverse().forEach(url => {
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = "Saved painting";
+          img.className = "gallery-img";
+          gallery.appendChild(img);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

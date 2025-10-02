@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile</title>
+  <link rel="stylesheet" href="css/profile.css">
+</head>
+<body>
+  <header>
+    <button class="back-btn" onclick="window.location.href='homepage.html'">←</button>
+    <h2>Profile</h2>
+    <div class="toggle-container">
+      <span class="toggle-label">🌙</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <!-- Profile Header -->
+    <section class="profile-header">
+      <div class="avatar">
+        <img id="profilePic" src="https://via.placeholder.com/120" alt="Profile Picture">
+        <input type="file" id="uploadPic" accept="image/*">
+      </div>
+
+      <!-- Editable fields -->
+      <h3 id="username" contenteditable="true">John Doe</h3>
+      <textarea id="bio" placeholder="Write something about yourself...">"This is my safe space."</textarea>
+    </section>
+
+    <!-- Account Info -->
+    <section class="profile-info">
+      <h3>Account Info</h3>
+      <label>
+        Email
+        <input type="email" id="emailInput" value="john@example.com">
+      </label>
+      <label>
+        Password
+        <input type="password" id="passwordInput" placeholder="••••••••">
+      </label>
+      <button id="saveProfile">Save Changes</button>
+    </section>
+
+    <!-- Settings -->
+    <section class="profile-settings">
+      <h3>Settings</h3>
+      <div class="setting-item">
+        <label for="notifyToggle">Notifications</label>
+        <input type="checkbox" id="notifyToggle" checked>
+      </div>
+      <div class="setting-item">
+        <label for="themeToggle">Use Dark Theme</label>
+        <input type="checkbox" id="themeToggle">
+      </div>
+    </section>
+
+    <button class="logout-btn" onclick="alert('Logged out!')">Log Out</button>
+
+    <!-- 🚨 Danger Zone -->
+    <section class="danger-zone">
+      <h3>Danger Zone</h3>
+      <p>Deleting your account is permanent and cannot be undone. All data will be lost.</p>
+      <button class="delete-btn" id="deleteAccount">Delete Account</button>
+    </section>
+  </main>
+
+  <script src="js/profile.js"></script>
+</body>
+</html>

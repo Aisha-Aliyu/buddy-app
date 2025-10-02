@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mood Paint</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="paint-body">
+
+    <a href="../games.html" class="back-button">←</a>
+
+  <div class="paint-header">
+    <h2>Mood Paint</h2>
+    <label class="switch">
+      <input type="checkbox" id="themeToggle">
+      <span class="slider round"></span>
+    </label>
+  </div>
+
+  <canvas id="paintCanvas" width="320" height="400"></canvas>
+
+  <div class="paint-controls">
+    <input type="color" id="brushColor" />
+    <input type="range" id="brushSize" min="1" max="30" value="5" />
+   <select id="brushType">
+  <option value="pencil">Pencil</option>
+  <option value="marker">Marker</option>
+  <option value="neon">Neon</option>
+</select>
+  </div>
+
+  <nav class="paint-bottom-nav">
+    <button onclick="undoPaint()">↩️ Undo</button>
+    <button onclick="clearCanvas()">🗑 Clear</button>
+    <button onclick="saveDrawing()">💾 Save</button>
+    <a href="wall-of-thought.html">
+  <span class="emoji">🖼️</span>
+  <span class="label">Gallery</span>
+</a>
+  </nav>
+
+  <audio id="bgMusic" src="../assets/sounds/relaxbg1.mp3" autoplay loop></audio>
+  <script src="../js/mood-paint.js"></script>
+</body>
+</html>

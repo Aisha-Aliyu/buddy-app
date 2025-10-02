@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Color Match Game</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+
+ <!-- Badge Popup -->
+<div id="badgePopup" class="badge-popup">
+  <div class="badge-content" id="badgeContent">
+    🏅 You've earned a new badge!
+  </div>
+</div>
+<body class="color-match-body">
+
+    <button id="darkModeToggle">🌓</button>
+
+  <div class="game-container">
+    <a href="../games.html" class="back-button">←</a>
+    <h2>Color Match</h2>
+
+    <div class="timer">Time Left: <span id="timeLeft">30</span>s</div>
+
+    <div class="score-section" id="scoreDisplay">Score: 0</div>
+
+    <div class="color-word" id="colorWord">Color</div>
+
+    <div class="color-options" id="colorOptions"></div>
+
+    <div class="extras">
+      <button onclick="viewBadges()">🏅 View Badges</button>
+      <button onclick="resetProgress()">🔁 Reset</button>
+    </div>
+  </div>
+
+
+
+  <div class="end-popup" id="endPopup">
+  <div class="end-content">
+    <p>Your time is up!</p>
+    <p>Your final score: <span id="finalScore">0</span></p>
+    <button onclick="startGame()">Play Again</button>
+  </div>
+</div>
+
+  <audio id="correctSound" src="../assets/sounds/correct.mp3"></audio>
+<audio id="wrongSound" src="../assets/sounds/wrong.mp3"></audio>
+
+  <script src="../js/color-match.js"></script>
+</body>
+</html>

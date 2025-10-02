@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VentSpace</title>
+  <link rel="stylesheet" href="css/ventspace.css"/>
+</head>
+<body>
+  <header>
+    <button class="back-btn" onclick="window.location.href='homepage.html'">←</button>
+    <h2>VentSpace</h2>
+    <div class="toggle-container">
+      <span class="toggle-label">🌙</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <section class="vent-input">
+      <textarea id="ventText" placeholder="Write down your thoughts..."></textarea>
+      <button id="saveVent">Save</button>
+    </section>
+
+    <section class="vent-list">
+      <h3>Your Entries</h3>
+      <input type="text" id="searchBar" placeholder="Search vents...">
+      <ul id="ventEntries"></ul>
+    </section>
+  </main>
+
+  <script src="js/ventspace.js"></script>
+</body>
+</html>

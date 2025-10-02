@@ -1,0 +1,126 @@
+/* Daily Affirmation Page */
+.affirmation-body {
+  background-color: #f2f2f2;
+  font-family: 'Arial', sans-serif;
+  padding: 20px;
+}
+
+/* Header */
+.affirmation-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.back-button {
+  text-decoration: none;
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
+  transition: transform 0.2s ease;
+}
+
+.back-button:hover {
+  transform: scale(1.2);
+  color: #835288;
+}
+
+/* Affirmation Cards List */
+.affirmation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+/* Affirmation Card */
+.affirmation-card {
+  position: relative;
+  width: 90%;
+  max-width: 350px;
+  height: 220px;
+  color: white;
+  padding: 20px;
+  border-radius: 20px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.5s ease forwards;
+  opacity: 0;
+  transition: transform 0.3s ease;
+}
+
+.affirmation-card:hover {
+  transform: scale(1.02);
+}
+
+/* Affirmation Text */
+.affirmation-card p {
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1.5;
+  z-index: 2;
+  color: #333;
+  background-color: #aaa3a3a9;
+}
+
+/* Save + Like buttons */
+.card-buttons {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  display: flex;
+  gap: 12px;
+}
+
+.card-buttons .btn-icon {
+  font-size: 18px;
+  cursor: pointer;
+  padding: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.8);
+  color: #444;
+  transition: all 0.3s ease;
+}
+
+.card-buttons .btn-icon:hover {
+  background: #835288;
+  color: white;
+  transform: scale(1.2);
+}
+
+/* Toast Message */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #333;
+  padding: 14px 25px;
+  border-radius: 30px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  font-size: 15px;
+  font-weight: bold;
+  opacity: 0;
+  z-index: 9999;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-10px);
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}

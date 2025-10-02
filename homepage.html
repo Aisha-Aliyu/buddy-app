@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- ✅ SEO Meta -->
+<title>Buddy – Your AI-Powered Mental Health Safe Space</title>
+<meta name="description" content="Welcome to Buddy: a modern AI-powered mental health platform. Vent, chat, set emergency contacts, and take control of your wellness journey." />
+<meta name="keywords" content="mental health app, AI assistant, wellness, safe space, therapy, stress relief, vent app, chat support" />
+<meta name="author" content="Aisha Aliyu" />
+
+<!-- ✅ Open Graph (for LinkedIn / Facebook) -->
+<meta property="og:title" content="Buddy – Your Mental Health AI Assistant" />
+<meta property="og:description" content="Venting space, emergency contacts, and friendly AI-powered chat designed to support your mental well-being." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://buddy-app.vercel.app" />
+<meta property="og:image" content="https://buddy-app.vercel.app/assets/favicon/android-chrome-512x512.png" />
+
+<!-- ✅ Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Buddy – AI Mental Health App" />
+<meta name="twitter:description" content="A safe space to vent, talk, and feel supported with Buddy – your AI-powered mental health companion." />
+<meta name="twitter:image" content="https://buddy-app.vercel.app/assets/favicon/android-chrome-512x512.png" />
+
+<!-- ✅ Favicons -->
+<link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
+<link rel="manifest" href="assets/favicon/site.webmanifest">
+<link rel="mask-icon" href="assets/favicon/favicon.ico" color="#8b698d">
+<meta name="theme-color" content="#8b698d" />
+
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  
+
+<!-- Greetings + Affirmation Section -->
+<div class="affirmation-box">
+  <div class="overlay">
+    <div class="top-section">
+      <p class="hello-text">Hello <span id="userGreetingName"> </span></p>
+      <button class="mode-btn" onclick="goToMoodCheck()">Choose Mode</button>
+    </div>
+
+    <div class="affirmation-message">
+      <h2>Your Daily Affirmation</h2>
+      <p>Start your day with positivity and self-love 💛</p>
+    </div>
+
+    <a href="affirmation.html" class="arrow-link">&#8594;</a>
+  </div>
+</div>
+
+          <div class="wellness-section">
+        <div class="wellness-card-container">
+            <div class="wellness-card">
+                <a href="meditation.html" class="emoji">🧘</a>
+            </div>
+            <p class="label">Guided <br> Meditation</p>
+        </div>
+        <div class="wellness-card-container">
+            <div class="wellness-card">
+                <a href="support.html" class="emoji">🌍</a>
+            </div>
+            <p class="label">Support <br>Community</p>
+        </div>
+        <div class="wellness-card-container">
+            <div class="wellness-card">
+                <a href="checkin.html" class="emoji">📅</a>
+            </div>
+            <p class="label">Daily <br>Check-ins</p>
+        </div>
+        <div class="wellness-card-container">
+            <div class="wellness-card">
+                <a href="games.html" class="emoji">🎮</a>
+            </div>
+            <p class="label">Mindful<br> Activities</p>
+        </div>
+    </div>
+
+    <!-- Cards -->
+<div class="cards-section">
+  <!-- Left Card -->
+  <div class="card card-left">
+    <a href="speak.html" class="icon-top-right">🎙</a>
+    <img src="assets/images/buddy.PNG" class="icon-top-left" alt="Buddy Icon" />
+    <div class="card-content">
+      <p>“Hey Sweetie!<br>Come and tell me how your day went!!!😊”</p>
+    </div>
+    <a href="chat.html" class="card-link">Talk to Buddy →</a>
+  </div>
+
+  <!-- Right Card -->
+  <div class="card card-right">
+    <a href="inspiration.html" class="icon-top-right">✉️</a>
+    <div class="card-content">
+      <p>“Inspiration for a Healthier Mind”</p>
+    </div>
+    <a href="inspiration.html" class="card-link">Rise & Reflect →</a>
+  </div>
+</div>
+
+<div class="space" style="height: 40px;">
+
+</div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+  <a href="moodtrack.html" class="active">
+    <span class="emoji">🎯</span>
+    <span class="label">Moodtrack</span>
+  </a>
+  <a href="contacts.html">
+    <span class="emoji">🚨</span>
+    <span class="label">Contacts</span>
+  </a>
+  <a href="chat.html">
+    <img src="assets/images/buddy.PNG" alt="Buddy" class="buddy-icon">
+    <span class="label">Buddy</span>
+  </a>
+  <a href="vents.html">
+    <span class="emoji">📖</span>
+    <span class="label">Ventspace</span>
+  </a>
+  <a href="profile.html">
+    <span class="emoji">👤</span>
+    <span class="label">Profile</span>
+  </a>
+</nav>
+
+
+
+
+<!-- Mood Modal -->
+<div id="moodModal" class="mood-modal">
+  <div class="modal-bar"></div>
+  <h3>I’m curious about you, <span id="userNameModal">User</span></h3>
+  <p>Which of the following best represents you today?</p>
+  <div class="mood-grid">
+    <div class="mood-item" data-mood="Happy">
+      <img src="assets/moods/happy.avif" alt="Happy" />
+      <span>Happy</span>
+    </div>
+    <div class="mood-item" data-mood="Exhausted">
+      <img src="assets/moods/exhausted.avif" alt="Exhausted" />
+      <span>Exhausted</span>
+    </div>
+    <div class="mood-item" data-mood="Angry">
+      <img src="assets/moods/angry.avif" alt="Angry" />
+      <span>Angry</span>
+    </div>
+    <div class="mood-item" data-mood="Lost">
+      <img src="assets/moods/lost.avif" alt="Lost" />
+      <span>Lost</span>
+    </div>
+    <div class="mood-item" data-mood="Joyful">
+      <img src="assets/moods/joyful.avif" alt="Joyful" />
+      <span>Joyful</span>
+    </div>
+    <div class="mood-item" data-mood="Calm">
+      <img src="assets/moods/calm.avif" alt="Calm" />
+      <span>Calm</span>
+    </div>
+    <div class="mood-item" data-mood="Tired">
+      <img src="assets/moods/tired.avif" alt="Tired" />
+      <span>Tired</span>
+    </div>
+    <div class="mood-item" data-mood="Unhappy">
+      <img src="assets/moods/unhappy.avif" alt="Unhappy" />
+      <span>Unhappy</span>
+    </div>
+    <div class="mood-item" data-mood="Sad">
+      <img src="assets/moods/sad.avif" alt="Sad" />
+      <span>Sad</span>
+    </div>
+    <div class="mood-item" data-mood="Neutral">
+      <img src="assets/moods/neutral.avif" alt="Neutral" />
+      <span>Neutral</span>
+    </div>
+    <div class="mood-item" data-mood="Anxious">
+      <img src="assets/moods/anxious.avif" alt="Anxious" />
+      <span>Anxious</span>
+    </div>
+    <div class="mood-item" data-mood="Excited">
+      <img src="assets/moods/excited.avif" alt="Excited" />
+      <span>Excited</span>
+    </div>
+  </div>
+
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+
+
+  <script src="js/script.js"></script>
+</body>
+</html>

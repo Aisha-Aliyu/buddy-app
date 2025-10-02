@@ -1,0 +1,32 @@
+{
+  "name": "Buddy – Mental Health AI Assistant",
+  "short_name": "Buddy",
+  "description": "Buddy is your safe space. An AI-powered mental health app where you can vent, chat, and set up emergency contacts.",
+  "icons": [
+    {
+      "src": "/assets/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/favicon/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/favicon/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#8b698d",
+  "background_color": "#ffffff",
+  "start_url": "/homepage.html",
+  "display": "standalone",
+  "orientation": "portrait"
+}

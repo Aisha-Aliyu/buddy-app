@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Contacts</title>
+  <link rel="stylesheet" href="css/contacts.css">
+</head>
+<body>
+  <header>
+    <button class="back-btn" onclick="window.location.href='homepage.html'">←</button>
+    <h2>Emergency Contacts</h2>
+    <div class="toggle-container">
+      <span class="toggle-label">🌙</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <h3>Set up to 3 Emergency Contacts</h3>
+    
+    <form id="contactForm">
+      <input type="text" id="contactName" placeholder="Name" required>
+      <input type="tel" id="contactPhone" placeholder="Phone Number" required>
+      <button type="submit">Add Contact</button>
+    </form>
+
+    <ul id="contactList"></ul>
+
+    <button class="alert-btn" onclick="sendDistressAlert()">🚨 Send Distress Alert</button>
+  </main>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

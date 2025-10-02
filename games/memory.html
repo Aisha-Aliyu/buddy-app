@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memory Match</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+  <body class="memory-body">
+    <button id="toggleDark" class="dark-toggle">🌙</button>
+  <div class="memory-container">
+    <a href="../games.html" class="back-button">←</a>
+    <h2>Memory Match</h2>
+
+    <div class="score-board">
+      Attempts: <span id="attempts">0</span> |
+      Time: <span id="timer">00:00</span> |
+      Best: <span id="bestScore">--</span>
+    </div>
+
+    <div class="card-grid" id="cardGrid"></div>
+
+    <button class="restart-btn" onclick="startMemoryGame()">🔁 Restart</button>
+
+    <!-- Game Complete Popup -->
+    <div id="memoryCompletePopup" class="badge-popup">
+      <div class="badge-content">
+        <p>🎉 Well done!</p>
+        <p>You completed the game in <span id="finalAttempts">0</span> attempts and <span id="finalTime">00:00</span>.</p>
+        <button onclick="startMemoryGame()">Play Again</button>
+      </div>
+    </div>
+  </div>
+  <script src="../js/memory.js"></script>
+</body>
+</html>

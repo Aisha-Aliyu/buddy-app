@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Moodtrack - Buddy</title>
+  <link rel="stylesheet" href="css/moodtrack.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <header>
+    <button class="back-btn" onclick="window.location.href='homepage.html'">← </button>
+    <h2>Moodtrack</h2>
+    <div class="toggle-container">
+      <span class="toggle-label">🌙</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <h3>Your Mood Over Time</h3>
+    <canvas id="moodChart"></canvas>
+  </main>
+
+  <script src="js/script.js"></script>
+  <script>
+    // Mood values mapping (convert text moods → numeric)
+    const moodValues = {
+      "Sad": 1,
+      "Unhappy": 2,
+      "Neutral": 3,
+      "Happy": 4,
+      "Joyful": 5,
+      "Excited": 5,
+      "Angry": 2,
+      "Exhausted": 2,
+      "Tired": 2,
+      "Lost": 2,
+      "Calm": 4,
+      "Anxious": 2
+    };
+
+    // Fetch saved moods from localStorage
+    let moodLogs = JSON.parse(localStorage.getItem("checkins")) || [];
+
+    // Sort by date
+    moodLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Extract labels (dates) & mood scores
+    const labels = moodLogs.map(entry => entry.date);
+    const dataPoints = moodLogs.map(entry => moodValues[entry.mood] || 3);
+
+    // Setup Chart.js
+    const ctx = document.getElementById('moodChart').getContext('2d');
+    const moodChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.length ? labels : ["No data yet"],
+        datasets: [{
+          label: "Mood Level",
+          data: dataPoints.length ? dataPoints : [0],
+          backgroundColor: "rgba(139,105,141,0.2)",
+          borderColor: "#8b698d",
+          borderWidth: 2,
+          tension: 0.4,
+          pointBackgroundColor: "#8b698d",
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: '#333' }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 5,
+            ticks: { color: '#333' }
+          },
+          x: {
+            ticks: { color: '#333' }
+          }
+        }
+      }
+    });
+
+    // Dark mode toggle
+    const toggle = document.getElementById('darkModeToggle');
+    toggle.addEventListener('change', () => {
+      document.body.classList.toggle('dark', toggle.checked);
+      const dark = document.body.classList.contains('dark');
+      moodChart.options.plugins.legend.labels.color = dark ? '#fff' : '#333';
+      moodChart.options.scales.x.ticks.color = dark ? '#fff' : '#333';
+      moodChart.options.scales.y.ticks.color = dark ? '#fff' : '#333';
+      moodChart.update();
+    });
+  </script>
+</body>
+</html>

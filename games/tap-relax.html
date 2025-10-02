@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tap & Relax</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="tap-body">
+
+    <button id="toggleDark" class="dark-toggle">🌙</button>
+
+  <div class="tap-container">
+    <a href="../games.html" class="back-button">←</a>
+    <h2>Tap & Relax</h2>
+
+    <div class="tap-info">
+      <div>Time: <span id="tapTime">30</span>s</div>
+      <div>Score: <span id="tapScore">0</span></div>
+    </div>
+
+    <div class="tap-zone" id="tapZone"></div>
+
+    <button class="restart-btn" onclick="startTapRelax()">🔁 Restart</button>
+  </div>
+
+  <audio id="tapAudio" src="../assets/sounds/relaxbg.mp3" loop></audio>
+  <script src="../js/tap-relax.js"></script>
+</body>
+</html>

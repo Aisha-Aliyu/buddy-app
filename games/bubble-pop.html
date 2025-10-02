@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bubble Pop</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="bubble-body">
+
+  <div class="bubble-header">
+    <a href="../games.html" class="back-button">←</a>
+    <h2>Bubble Pop</h2>
+    <label class="switch">
+      <input type="checkbox" id="themeToggle">
+      <span class="slider round"></span>
+    </label>
+  </div>
+
+  <div class="bubble-info">
+    <div>Time Left: <span id="time">30</span>s</div>
+    <div>Score: <span id="score">0</span></div>
+  </div>
+
+  <div class="bubble-container" id="bubbleContainer"></div>
+
+  <div id="endScreen" class="bubble-end">
+    <p>⏰ Time’s up!</p>
+    <p>Your Score: <span id="finalScore">0</span></p>
+    <button onclick="startGame()">🔁 Play Again</button>
+  </div>
+
+  <audio id="popSound" src="../assets/sounds/pop.mp3" preload="auto"></audio>
+  <audio id="bgSound" src="../assets/sounds/relaxbg2.mp3" autoplay loop></audio>
+
+  <script src="../js/bubble-pop.js"></script>
+</body>
+</html>
