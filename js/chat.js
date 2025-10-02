@@ -1,6 +1,9 @@
+// js/chat.js (frontend)
 function goBack() {
-window.location.href = "homepage.html";
+  window.location.href = "homepage.html";
 }
+
+const API_URL = "https://buddy-app-xi0a.onrender.com"; // <- your Render backend URL
 
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
@@ -58,16 +61,18 @@ The user is feeling ${mood}. ${moodPrompt[mood] || ""}.
 Their message: "${text}"`;
 
   try {
-    const response = await fetch("/api/chat", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ userMessage: text, mood })
-});
+    const response = await fetch(`${API_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userMessage: text, mood })
+    });
+
     const data = await response.json();
-    const botReply = data.choices[0].message.content;
+    const botReply = data.reply || "No response from Buddy.";
     typingIndicator.style.display = "none";
     appendBubble(botReply, "bot");
   } catch (err) {
+    console.error("Chat fetch error:", err);
     typingIndicator.style.display = "none";
     appendBubble("Oops! I couldn't connect to Buddy right now.", "bot");
   }
@@ -80,4 +85,3 @@ function appendBubble(message, type) {
   chatBox.insertBefore(bubble, typingIndicator);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
-

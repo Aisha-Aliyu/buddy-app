@@ -10,12 +10,9 @@
 <body>
 
   <header class="moody">
-    <button class="back-btn" onclick="window.location.href='homepage.html'">← </button>
+    <button class="back-button" onclick="window.location.href='homepage.html'">← </button>
     <h2>Moodtrack</h2>
-    <div class="toggle-container">
-      <span class="toggle-label">🌙</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="darkModeToggle">
+   <button id="toggleDark" class="dark-toggle">🌙</button>
         <span class="slider"></span>
       </label>
     </div>
@@ -29,30 +26,30 @@
   <script src="js/script.js"></script>
   <script>
     // Mood values mapping (convert text moods → numeric)
-    const moodValues = {
-      "Sad": 1,
-      "Unhappy": 2,
-      "Neutral": 3,
-      "Happy": 4,
-      "Joyful": 5,
-      "Excited": 5,
-      "Angry": 2,
-      "Exhausted": 2,
-      "Tired": 2,
-      "Lost": 2,
-      "Calm": 4,
-      "Anxious": 2
-    };
+  const moodValues = {
+    "Sad": 1,
+    "Unhappy": 2,
+    "Neutral": 3,
+    "Happy": 4,
+    "Joyful": 5,
+    "Excited": 5,
+    "Angry": 2,
+    "Exhausted": 2,
+    "Tired": 2,
+    "Lost": 2,
+    "Calm": 4,
+    "Anxious": 2
+  };
 
-    // Fetch saved moods from localStorage
-    let moodLogs = JSON.parse(localStorage.getItem("checkins")) || [];
+  // Fetch saved moods from localStorage
+  let moodLogs = JSON.parse(localStorage.getItem("checkins")) || [];
 
-    // Sort by date
-    moodLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+  // Sort by date
+  moodLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Extract labels (dates) & mood scores
-    const labels = moodLogs.map(entry => entry.date);
-    const dataPoints = moodLogs.map(entry => moodValues[entry.mood] || 3);
+  // Extract labels (dates) & mood scores
+  const labels = moodLogs.map(entry => new Date(entry.date).toLocaleDateString());
+  const dataPoints = moodLogs.map(entry => moodValues[entry.mood] || 3);
 
     // Setup Chart.js
     const ctx = document.getElementById('moodChart').getContext('2d');

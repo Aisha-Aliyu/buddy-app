@@ -1,8 +1,12 @@
+// backend/server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/auth');
+const chatRoute = require('./routes/chat'); // new
+
+require('dotenv').config();
 
 const app = express();
 
@@ -17,6 +21,7 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
 
 // Routes
 app.use('/api', authRoutes);
+app.use('/api/chat', chatRoute);
 
 // Start Server
 const PORT = process.env.PORT || 5000;

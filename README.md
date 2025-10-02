@@ -1,6 +1,6 @@
 # Buddy — AI Mental Health Companion 💛
 
-Live Demo: https://buddy-app-six.vercel.app (Replace with your real URL)  
+Live Demo: https://buddy-app-six.vercel.app 
 
 ---
 

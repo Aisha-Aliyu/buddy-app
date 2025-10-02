@@ -1,12 +1,4 @@
-/* General */
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #f9f9f9;
-  color: #333;
-  transition: background 0.3s, color 0.3s;
-}
+/* General Styles */
 
 header {
   display: flex;
@@ -200,19 +192,3 @@ body.dark .vent-list li {
   transform: translateX(26px);
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-  textarea {
-    min-height: 100px;
-    font-size: 0.95rem;
-  }
-
-  #saveVent {
-    font-size: 0.9rem;
-    padding: 0.5rem;
-  }
-
-  .vent-list li {
-    font-size: 0.9rem;
-  }
-}
