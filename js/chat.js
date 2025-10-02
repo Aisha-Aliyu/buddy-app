@@ -58,21 +58,11 @@ The user is feeling ${mood}. ${moodPrompt[mood] || ""}.
 Their message: "${text}"`;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer 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",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: fullPrompt },
-          { role: "user", content: text }
-        ]
-      })
-    });
-
+    const response = await fetch("/api/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ userMessage: text, mood })
+});
     const data = await response.json();
     const botReply = data.choices[0].message.content;
     typingIndicator.style.display = "none";
