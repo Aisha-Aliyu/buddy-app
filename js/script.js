@@ -87,6 +87,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+// Set backend base URL
+const API_URL = "https://buddy-app-xi0a.onrender.com";
+
 // Sign-Up
 document.getElementById("signup-form")?.addEventListener("submit", async function (e) {
   e.preventDefault();
@@ -96,7 +99,7 @@ document.getElementById("signup-form")?.addEventListener("submit", async functio
   const password = document.getElementById("password").value.trim();
 
   try {
-    const response = await fetch("http://localhost:5000/api/signup", {
+    const response = await fetch(`${API_URL}/api/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fullname: name, email, password }),
@@ -110,6 +113,7 @@ document.getElementById("signup-form")?.addEventListener("submit", async functio
       window.location.href = "signin.html";
     }
   } catch (error) {
+    console.error(error);
     showToast("An error occurred. Please try again.");
   }
 });
@@ -122,7 +126,7 @@ document.getElementById("login-form")?.addEventListener("submit", async function
   const password = document.getElementById("password").value.trim();
 
   try {
-    const response = await fetch("http://localhost:5000/api/signin", {
+    const response = await fetch(`${API_URL}/api/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -136,6 +140,7 @@ document.getElementById("login-form")?.addEventListener("submit", async function
       window.location.href = "homepage.html";
     }
   } catch (error) {
+    console.error(error);
     showToast("An error occurred. Please try again.");
   }
 });
