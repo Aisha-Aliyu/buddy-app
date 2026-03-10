@@ -147,7 +147,7 @@ This project was submitted as a **Final Year Project** for a B.Sc. in Software E
 **Aisha Aliyu** — Full-Stack & Frontend Engineer
 
 - 🌐 Portfolio: [humairah.netlify.app](https://humairah.netlify.app)
-- 💼 LinkedIn: [linkedin.com/in/aisha-aliyu-628b41376](https://www.linkedin.com/in/aisha-aliyu-628b41376)
+- 💼 LinkedIn: [https://www.linkedin.com/in/aisha-aliyu-a9687b233](https://www.linkedin.com/in/aisha-aliyu-a9687b233)
 - 🐙 GitHub: [@Aisha-Aliyu](https://github.com/Aisha-Aliyu)
 
 -----
