@@ -125,7 +125,7 @@ async function postToBackend(path, body) {
       await sleep(Math.min(2000 * attempt, 8000));
       continue;
     }
-    return { ok: response.ok, status: response.status, data };
+    return { ok: response.ok, status: response.status, data, retried: attempt > 1 };
   }
 }
 
@@ -151,6 +151,9 @@ async function submitAuthForm(form, path, body, busyText, onSuccess) {
   button.disabled = false;
   button.textContent = buttonText;
 
+  // If the first sign-up attempt reached the server but its answer was lost, the retry
+  // finds the account already there. That account is almost certainly this one.
+  if (path === "/api/signup" && result.status === 409 && result.retried) return onSuccess({});
   if (result.ok) return onSuccess(result.data);
   if (result.status === 0) {
     return setFormStatus(form, "Can't reach the server right now. Please check your connection and try again.", "error");
@@ -279,12 +282,15 @@ function sendDistressAlert() {
   });
 }
 
-// Dark mode toggle
-const toggle = document.getElementById("darkModeToggle");
-if (toggle) {
-  toggle.addEventListener("change", () => {
-    document.body.classList.toggle("dark", toggle.checked);
-  });
+// Dark mode toggle. Kept in its own block: a global `toggle` here clashed with the
+// mood-tracking page's own script, which then failed and never drew the mood chart.
+{
+  const toggle = document.getElementById("darkModeToggle");
+  if (toggle) {
+    toggle.addEventListener("change", () => {
+      document.body.classList.toggle("dark", toggle.checked);
+    });
+  }
 }
 
 // Initial display

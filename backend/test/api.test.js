@@ -122,11 +122,17 @@ test("sign-up and sign-in against a real database", {
     assert.equal(signedIn.status, 200);
     assert.equal(signedIn.body.name, "Ada Lovelace");
 
-    // Accounts made before this change kept the email exactly as typed
+    // Accounts made before this change kept the email exactly as typed, and some used
+    // addresses the new sign-up check would refuse
     await User.create({ fullname: "Old Account", email: "Legacy@Example.com", passwordHash: await bcrypt.hash("old password", 10) });
     const legacy = await call(base, "/api/signin", { body: { email: "legacy@example.com", password: "old password" }, headers: me });
     assert.equal(legacy.status, 200);
     assert.equal(legacy.body.name, "Old Account");
+    await User.create({ fullname: "Local Account", email: "Someone@LocalHost", passwordHash: await bcrypt.hash("old password", 10) });
+    const local = await call(base, "/api/signin", { body: { email: "someone@localhost", password: "old password" }, headers: me });
+    assert.equal(local.status, 200);
+    const nobody = await call(base, "/api/signin", { body: { email: "nobody@example.com", password: "not a real password" }, headers: me });
+    assert.equal(nobody.status, 401);
 
     // Eight wrong passwords lock that visitor out of the account, but not its owner
     const attacker = { "CF-Connecting-IP": "203.0.113.66" };
@@ -136,6 +142,21 @@ test("sign-up and sign-in against a real database", {
     assert.equal((await call(base, "/api/signin", { body: { email: "ada@example.com", password: "long enough" }, headers: attacker })).status, 429);
     const owner = { "CF-Connecting-IP": "198.51.100.21" };
     assert.equal((await call(base, "/api/signin", { body: { email: "ada@example.com", password: "long enough" }, headers: owner })).status, 200);
+
+    // Guessing spread over many addresses: past 50 wrong passwords in an hour, each new
+    // address gets one guess, while the owner can still sign in
+    await User.create({ fullname: "Grace", email: "grace@example.com", passwordHash: await bcrypt.hash("right password", 10) });
+    for (let n = 100; n < 107; n++) {
+      for (let i = 0; i < 8; i++) {
+        const res = await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: { "CF-Connecting-IP": `203.0.113.${n}` } });
+        assert.equal(res.status, 401);
+      }
+    }
+    const fresh = { "CF-Connecting-IP": "203.0.113.200" };
+    assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: fresh })).status, 401);
+    assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: fresh })).status, 429);
+    const grace = { "CF-Connecting-IP": "198.51.100.30" };
+    assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "right password" }, headers: grace })).status, 200);
   } finally {
     server.close();
     await mongoose.disconnect();

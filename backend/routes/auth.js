@@ -3,14 +3,19 @@ const router = express.Router();
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const { AttemptLimiter, clientIp } = require('../lib/limits');
-const { cleanEmail, cleanName } = require('../lib/validate');
+const { cleanEmail, normalizeEmail, cleanName } = require('../lib/validate');
 
-// Sign-up and sign-in requests per visitor, wrong passwords per visitor and account (so
-// nobody can lock someone else out), and a looser count per account against guessing
-// spread over many addresses
-const authRequestsByIp = new AttemptLimiter(20, 10 * 60 * 1000);
+// Sign-up and sign-in requests per visitor (generous, since a class or office can share
+// one address), and wrong passwords per visitor and account. A looser count per account
+// slows guessing spread over many addresses; it only stops visitors who have already
+// got that account's password wrong, so the owner can still sign in.
+const authRequestsByIp = new AttemptLimiter(60, 10 * 60 * 1000);
 const failedLogins = new AttemptLimiter(8, 15 * 60 * 1000);
 const failedLoginsForEmail = new AttemptLimiter(50, 60 * 60 * 1000);
+
+// Checked when no account matches, so a wrong email takes as long as a wrong password
+// and the timing doesn't reveal which emails have accounts
+const DUMMY_HASH = bcrypt.hashSync('not a real password', 10);
 
 // Older accounts kept the email exactly as typed, so lookups ignore letter case
 const IGNORE_CASE = { locale: 'en', strength: 2 };
@@ -59,7 +64,7 @@ router.post('/signup', async (req, res) => {
 });
 
 router.post('/signin', async (req, res) => {
-  const email = cleanEmail(req.body?.email);
+  const email = normalizeEmail(req.body?.email);
   const password = req.body?.password;
 
   if (!email) return res.status(400).json({ message: 'Please enter a valid email address.' });
@@ -68,7 +73,9 @@ router.post('/signin', async (req, res) => {
 
   const ip = clientIp(req);
   const visitorAndAccount = `${ip}|${email}`;
-  if (authRequestsByIp.blocked(ip) || failedLogins.blocked(visitorAndAccount) || failedLoginsForEmail.blocked(email))
+  const failedBefore = failedLogins.count(visitorAndAccount);
+  if (authRequestsByIp.blocked(ip) || failedBefore >= failedLogins.limit ||
+      (failedBefore > 0 && failedLoginsForEmail.blocked(email)))
     return tooManyAttempts(res);
   authRequestsByIp.add(ip);
 
@@ -76,7 +83,8 @@ router.post('/signin', async (req, res) => {
   let isMatch = false;
   try {
     user = await User.findOne({ email }).collation(IGNORE_CASE);
-    if (user && password.length <= 128) isMatch = await bcrypt.compare(password, user.passwordHash);
+    const hash = user && password.length <= 128 ? user.passwordHash : DUMMY_HASH;
+    isMatch = (await bcrypt.compare(password.slice(0, 128), hash)) && hash !== DUMMY_HASH;
   } catch (error) {
     console.error('Sign-in failed:', error.message);
     return databaseUnavailable(res);

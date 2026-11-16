@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { AttemptLimiter, clientIp } = require("../lib/limits");
-const { cleanEmail, cleanName } = require("../lib/validate");
+const { cleanEmail, normalizeEmail, cleanName } = require("../lib/validate");
 
 test("limiter blocks after the limit and resets", () => {
   const limiter = new AttemptLimiter(3, 60000);
@@ -28,6 +28,15 @@ test("client IP can't be faked through X-Forwarded-For", () => {
   assert.equal(clientIp(req({ "cf-connecting-ip": "203.0.113.5", "x-forwarded-for": "1.2.3.4" })), "203.0.113.5");
   assert.equal(clientIp(req({ "x-forwarded-for": "1.2.3.4, 198.51.100.7" })), "198.51.100.7");
   assert.equal(clientIp(req({})), "10.0.0.9");
+  // Only Cloudflare Enterprise sets True-Client-IP, so a visitor could send their own
+  assert.equal(clientIp(req({ "true-client-ip": "6.6.6.6" })), "10.0.0.9");
+});
+
+test("sign-in accepts any address an older account might have used", () => {
+  assert.equal(normalizeEmail("  Old.User@LocalHost "), "old.user@localhost");
+  assert.equal(normalizeEmail("no-at-sign"), null);
+  assert.equal(normalizeEmail(""), null);
+  assert.equal(normalizeEmail(7), null);
 });
 
 test("emails are trimmed, lowercased and must be a single bare address", () => {

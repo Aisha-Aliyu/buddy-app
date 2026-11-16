@@ -15,9 +15,13 @@ class AttemptLimiter {
     if (!attempts.length) this.hits.delete(key);
   }
 
-  blocked(key) {
+  count(key) {
     this.prune(key, Date.now());
-    return (this.hits.get(key)?.length || 0) >= this.limit;
+    return this.hits.get(key)?.length || 0;
+  }
+
+  blocked(key) {
+    return this.count(key) >= this.limit;
   }
 
   add(key) {
@@ -42,10 +46,8 @@ class AttemptLimiter {
 // Cloudflare, which sets CF-Connecting-IP itself. The first X-Forwarded-For entry can be
 // faked by the visitor; the last one was added by the proxy closest to the app.
 function clientIp(req) {
-  for (const header of ["cf-connecting-ip", "true-client-ip"]) {
-    const value = String(req.headers[header] || "").trim();
-    if (value) return value;
-  }
+  const fromCloudflare = String(req.headers["cf-connecting-ip"] || "").trim();
+  if (fromCloudflare) return fromCloudflare;
   const forwarded = String(req.headers["x-forwarded-for"] || "")
     .split(",")
     .map((part) => part.trim())
