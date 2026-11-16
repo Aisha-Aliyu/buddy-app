@@ -10,7 +10,11 @@ try {
   mongoose = require("mongoose");
   bcrypt = require("bcryptjs");
 } catch (err) {
-  missing = `packages not installed (${err.code || err.message})`;
+  // Only a missing package (npm install not run yet) skips these tests. Any other error,
+  // like a broken file in the app, fails them, and on CI nothing is skipped.
+  const missingPackage = err.code === "MODULE_NOT_FOUND" && !/Cannot find module '\.{1,2}\//.test(err.message);
+  if (process.env.CI || !missingPackage) throw err;
+  missing = `packages not installed (${err.message.split("\n")[0]})`;
 }
 
 function listen(server) {
