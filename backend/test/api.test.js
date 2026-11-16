@@ -146,12 +146,14 @@ test("sign-up and sign-in against a real database", {
     // Guessing spread over many addresses: past 50 wrong passwords in an hour, each new
     // address gets one guess, while the owner can still sign in
     await User.create({ fullname: "Grace", email: "grace@example.com", passwordHash: await bcrypt.hash("right password", 10) });
-    for (let n = 100; n < 107; n++) {
-      for (let i = 0; i < 8; i++) {
-        const res = await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: { "CF-Connecting-IP": `203.0.113.${n}` } });
-        assert.equal(res.status, 401);
-      }
+    const guess = (n) => call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: { "CF-Connecting-IP": `203.0.113.${n}` } });
+    // Six addresses use up their eight guesses each (48), a seventh adds two (50)
+    for (let n = 100; n < 106; n++) {
+      for (let i = 0; i < 8; i++) assert.equal((await guess(n)).status, 401);
     }
+    assert.equal((await guess(106)).status, 401);
+    assert.equal((await guess(106)).status, 401);
+    assert.equal((await guess(106)).status, 429);
     const fresh = { "CF-Connecting-IP": "203.0.113.200" };
     assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: fresh })).status, 401);
     assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: fresh })).status, 429);
