@@ -44,20 +44,24 @@
           AI-powered wellness tools.
         </p>
         <form id="signup-form">
-          <input id="fullname" type="name" placeholder="Full Name" name="fullname" required />
+          <input id="fullname" type="name" placeholder="Full Name" name="fullname" autocomplete="name" maxlength="80" required />
           <input
             id="email" type="email"
             placeholder="Email Address"
             name="email"
+            autocomplete="email"
             required
           />
           <input
             id="password" type="password"
-            placeholder="Password"
+            placeholder="Password (at least 8 characters)"
             name="password"
+            autocomplete="new-password"
+            minlength="8"
             required
           />
           <button type="submit" class="login-btn">SIGN UP</button>
+          <p class="form-status" role="status" aria-live="polite"></p>
         </form>
         <p class="signup-link">
           Already a User? <a href="signin.html">Sign In</a>
