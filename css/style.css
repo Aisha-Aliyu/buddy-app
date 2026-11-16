@@ -1539,6 +1539,16 @@ input:checked + .slider::before {
   font-size: 18px;
 }
 
+/* The moon button sits in the header row instead of floating over the title */
+.moody .dark-toggle {
+  position: static;
+}
+
+/* Chart.js sizes a chart from its parent, so the canvas gets a parent of its own */
+.mood-chart {
+  position: relative;
+}
+
 .toggle-container {
   display: flex;
   align-items: center;

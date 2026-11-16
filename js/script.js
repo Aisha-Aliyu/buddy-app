@@ -26,6 +26,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Skip Intro → straight home if this phone has signed in before, otherwise sign in
+  const skipIntroBtn = document.querySelector(".skip-intro-btn");
+  if (skipIntroBtn) {
+    skipIntroBtn.addEventListener("click", function () {
+      window.location.href = localStorage.getItem("userName") ? "homepage.html" : "signin.html";
+    });
+  }
+
   // Personalized greeting
   const userName = localStorage.getItem("userName") || " User";
   const greetingName = document.getElementById("userGreetingName");
