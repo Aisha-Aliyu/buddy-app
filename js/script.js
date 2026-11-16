@@ -1,12 +1,13 @@
-// Background Music on Homepage
-window.addEventListener("DOMContentLoaded", () => {
-  const audio = new Audio("assets/audio/background.mp3");
-  audio.volume = 0.2;
-  audio.loop = true;
-  audio.play().catch(() => {
-    console.log("Background music will play after interaction.");
-  });
-});
+// Backend base URL
+const API_URL = "https://buddy-app-xi0a.onrender.com";
+
+// The backend is on Render's free plan, which puts it to sleep when nobody has used it
+// for a while, and waking it takes up to a minute. Every page pings it as soon as it
+// opens, so by the time someone signs in it is usually awake.
+function wakeServer() {
+  fetch(`${API_URL}/api/health`, { cache: "no-store" }).catch(() => {});
+}
+wakeServer();
 
 // Splash screen transition
 function goToNextScreen() {
@@ -87,62 +88,106 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// Set backend base URL
-const API_URL = "https://buddy-app-xi0a.onrender.com";
+// --- Sign-up and sign-in ---
+const AUTH_TIMEOUT_MS = 90000;
+const AUTH_RETRY_WINDOW_MS = 60000;
+const WAKING_NOTICE_MS = 3500;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Sends the form to the backend. While Render wakes the server, the request can fail
+// before reaching it, so those failures are retried for a while.
+async function postToBackend(path, body) {
+  const giveUpAt = Date.now() + AUTH_RETRY_WINDOW_MS;
+  for (let attempt = 1; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch(`${API_URL}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      clearTimeout(timer);
+      if (error.name !== "AbortError" && Date.now() < giveUpAt) {
+        await sleep(Math.min(2000 * attempt, 8000));
+        continue;
+      }
+      return { ok: false, status: 0, data: {} };
+    }
+    clearTimeout(timer);
+    const data = await response.json().catch(() => ({}));
+    // Render answers with its own error page while it is still starting the server
+    if (!data.message && [502, 503, 504].includes(response.status) && Date.now() < giveUpAt) {
+      await sleep(Math.min(2000 * attempt, 8000));
+      continue;
+    }
+    return { ok: response.ok, status: response.status, data };
+  }
+}
+
+function setFormStatus(form, message, kind = "") {
+  const status = form.querySelector(".form-status");
+  if (!status) return showToast(message);
+  status.textContent = message;
+  status.className = "form-status" + (kind ? ` ${kind}` : "");
+}
+
+async function submitAuthForm(form, path, body, busyText, onSuccess) {
+  const button = form.querySelector('button[type="submit"]');
+  const buttonText = button.textContent;
+  button.disabled = true;
+  button.textContent = busyText;
+  setFormStatus(form, "");
+  const wakingNotice = setTimeout(() => {
+    setFormStatus(form, "Waking up the server. The first sign-in after a quiet spell can take up to a minute.");
+  }, WAKING_NOTICE_MS);
+
+  const result = await postToBackend(path, body);
+  clearTimeout(wakingNotice);
+  button.disabled = false;
+  button.textContent = buttonText;
+
+  if (result.ok) return onSuccess(result.data);
+  if (result.status === 0) {
+    return setFormStatus(form, "Can't reach the server right now. Please check your connection and try again.", "error");
+  }
+  setFormStatus(form, result.data.message || "Something went wrong. Please try again.", "error");
+}
 
 // Sign-Up
 document.getElementById("signup-form")?.addEventListener("submit", async function (e) {
   e.preventDefault();
-
+  const form = e.currentTarget;
   const name = document.getElementById("fullname").value.trim();
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
-  try {
-    const response = await fetch(`${API_URL}/api/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fullname: name, email, password }),
-    });
-
-    const data = await response.json();
-    showToast(data.message);
-
-    if (response.ok) {
-      localStorage.setItem("userName", name);
-      window.location.href = "signin.html";
-    }
-  } catch (error) {
-    console.error(error);
-    showToast("An error occurred. Please try again.");
+  if (password.length < 8) {
+    return setFormStatus(form, "Your password needs at least 8 characters.", "error");
   }
+
+  await submitAuthForm(form, "/api/signup", { fullname: name, email, password }, "Creating account...", (data) => {
+    localStorage.setItem("userName", data.name || name);
+    setFormStatus(form, "Account created. Taking you to sign in...", "success");
+    setTimeout(() => { window.location.href = "signin.html"; }, 900);
+  });
 });
 
 // Sign-In
 document.getElementById("login-form")?.addEventListener("submit", async function (e) {
   e.preventDefault();
-
+  const form = e.currentTarget;
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
-  try {
-    const response = await fetch(`${API_URL}/api/signin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-    showToast(data.message);
-
-    if (response.ok) {
-      localStorage.setItem("userName", data.name);
-      window.location.href = "homepage.html";
-    }
-  } catch (error) {
-    console.error(error);
-    showToast("An error occurred. Please try again.");
-  }
+  await submitAuthForm(form, "/api/signin", { email, password }, "Signing in...", (data) => {
+    if (data.name) localStorage.setItem("userName", data.name);
+    window.location.href = "homepage.html";
+  });
 });
 
 // Toast Function
@@ -172,46 +217,48 @@ function goTo(page) {
   window.location.href = page;
 }
 
-
-
-
-
-// Load saved contacts
+// --- Emergency contacts (contacts page only) ---
 let contacts = JSON.parse(localStorage.getItem("contacts")) || [];
 
 function displayContacts() {
   const list = document.getElementById("contactList");
+  if (!list) return;
   list.innerHTML = "";
 
   contacts.forEach((c, index) => {
     const li = document.createElement("li");
-    li.innerHTML = `
-      <span>${c.name} - ${c.phone}</span>
-      <button onclick="removeContact(${index})">❌</button>
-    `;
+    const label = document.createElement("span");
+    label.textContent = `${c.name} - ${c.phone}`;
+    const remove = document.createElement("button");
+    remove.textContent = "❌";
+    remove.addEventListener("click", () => removeContact(index));
+    li.append(label, remove);
     list.appendChild(li);
   });
 }
 
 // Add new contact
-document.getElementById("contactForm").addEventListener("submit", e => {
-  e.preventDefault();
-  if (contacts.length >= 3) {
-    alert("You can only add up to 3 contacts.");
-    return;
-  }
+const contactForm = document.getElementById("contactForm");
+if (contactForm) {
+  contactForm.addEventListener("submit", e => {
+    e.preventDefault();
+    if (contacts.length >= 3) {
+      alert("You can only add up to 3 contacts.");
+      return;
+    }
 
-  const name = document.getElementById("contactName").value.trim();
-  const phone = document.getElementById("contactPhone").value.trim();
+    const name = document.getElementById("contactName").value.trim();
+    const phone = document.getElementById("contactPhone").value.trim();
 
-  if (!name || !phone) return;
+    if (!name || !phone) return;
 
-  contacts.push({ name, phone });
-  localStorage.setItem("contacts", JSON.stringify(contacts));
-  displayContacts();
+    contacts.push({ name, phone });
+    localStorage.setItem("contacts", JSON.stringify(contacts));
+    displayContacts();
 
-  e.target.reset();
-});
+    e.target.reset();
+  });
+}
 
 // Remove contact
 function removeContact(index) {
@@ -242,8 +289,3 @@ if (toggle) {
 
 // Initial display
 displayContacts();
-
-
-
-
-

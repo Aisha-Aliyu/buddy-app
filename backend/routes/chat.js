@@ -1,7 +1,14 @@
 // backend/routes/chat.js
 const express = require("express");
-const fetch = require("node-fetch"); // make sure node-fetch is in backend/package.json
+const { AttemptLimiter, clientIp } = require("../lib/limits");
 const router = express.Router();
+
+const MAX_MESSAGE_LENGTH = 2000;
+// Every reply uses the AI service, so one visitor gets 30 messages per 10 minutes
+const chatRequestsByIp = new AttemptLimiter(30, 10 * 60 * 1000);
+// OpenRouter's free router picks whichever free model is available, so the chat keeps
+// working without credits. OPENROUTER_MODEL can name a specific model instead.
+const DEFAULT_MODEL = "openrouter/free";
 
 const moodPrompt = {
   Happy: "Respond in a cheerful, bright tone",
@@ -18,49 +25,74 @@ const moodPrompt = {
   Exhausted: "Remind them it’s okay to rest"
 };
 
+const AI_UNAVAILABLE = "Buddy couldn't reach the AI service just now. Please try again in a moment.";
+
+router.resetLimits = () => chatRequestsByIp.reset();
+
 router.post("/", async (req, res) => {
+  const userMessage = typeof req.body?.userMessage === "string" ? req.body.userMessage.trim() : "";
+  const mood = Object.hasOwn(moodPrompt, req.body?.mood) ? req.body.mood : "Neutral";
+
+  if (!userMessage) return res.status(400).json({ reply: "Please type a message first." });
+  if (userMessage.length > MAX_MESSAGE_LENGTH)
+    return res.status(400).json({ reply: `That message is a bit long. Please keep it under ${MAX_MESSAGE_LENGTH} characters.` });
+
+  const ip = clientIp(req);
+  if (chatRequestsByIp.blocked(ip))
+    return res.status(429).json({ reply: "You've sent a lot of messages in a short time. Please take a short break and try again in a few minutes." });
+  chatRequestsByIp.add(ip);
+
+  const openRouterKey = (process.env.OPENROUTER_KEY || "").trim();
+  if (!openRouterKey) {
+    console.error("OPENROUTER_KEY not set in environment");
+    return res.status(503).json({ reply: "Buddy can't chat right now because the AI service isn't set up on the server." });
+  }
+
+  const systemPrompt = [
+    "You are Buddy, a warm and supportive mental health companion in a wellness app.",
+    `The user says they feel ${mood}. ${moodPrompt[mood]}.`,
+    "Keep replies short, kind and practical. You are not a therapist and you don't diagnose.",
+    "If the user mentions self-harm, suicide, abuse or being in danger, respond with care and urge them to contact local emergency services, a crisis line or someone they trust right away.",
+  ].join(" ");
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
   try {
-    const { userMessage, mood } = req.body;
-    if (!userMessage) return res.status(400).json({ message: "No message provided" });
-
-    const fullPrompt = `You are Buddy, a helpful mental health assistant. 
-The user is feeling ${mood || "Neutral"}. ${moodPrompt[mood] || ""}. 
-Their message: "${userMessage}"`;
-
-    const openRouterKey = process.env.OPENROUTER_KEY;
-    if (!openRouterKey) {
-      console.error("OPENROUTER_KEY not set in environment");
-      return res.status(500).json({ reply: "Server misconfiguration: missing API key." });
-    }
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    // Node 18+ has fetch built in. The old require("node-fetch") broke because version 3
+    // of that package can't be loaded with require.
+    const response = await fetch(process.env.OPENROUTER_URL || "https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${openRouterKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://buddy-app-six.vercel.app",
+        "X-Title": "Buddy"
       },
       body: JSON.stringify({
-        model: "openai/gpt-3.5-turbo",
+        model: (process.env.OPENROUTER_MODEL || "").trim() || DEFAULT_MODEL,
         messages: [
-          { role: "system", content: fullPrompt },
+          { role: "system", content: systemPrompt },
           { role: "user", content: userMessage }
-        ]
-      })
+        ],
+        max_tokens: 1000
+      }),
+      signal: controller.signal
     });
 
     if (!response.ok) {
       const text = await response.text();
-      console.error("OpenRouter error:", response.status, text);
-      return res.status(502).json({ reply: "Failed to connect to the AI service." });
+      console.error("OpenRouter error:", response.status, text.slice(0, 300));
+      return res.status(502).json({ reply: AI_UNAVAILABLE });
     }
 
     const data = await response.json();
-    // Some providers return choices...message...content; we try to be defensive
-    const botReply = data?.choices?.[0]?.message?.content || data?.reply || data?.result || "No response from Buddy.";
-    return res.status(200).json({ reply: botReply });
+    const botReply = data?.choices?.[0]?.message?.content?.trim();
+    return res.status(200).json({ reply: botReply || "Sorry, I didn't catch that. Could you say it another way?" });
   } catch (err) {
-    console.error("Chat route error:", err);
-    return res.status(500).json({ reply: "Oops! I couldn't connect to Buddy right now." });
+    console.error("Chat route error:", err.message);
+    return res.status(502).json({ reply: AI_UNAVAILABLE });
+  } finally {
+    clearTimeout(timer);
   }
 });
 

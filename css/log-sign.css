@@ -152,3 +152,24 @@ input:focus {
 .animate-slide-in {
   animation: slideIn 0.7s ease-out;
 }
+/* Result of signing in or up, shown under the button */
+.form-status {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #4a3a4c;
+  text-align: center;
+}
+.form-status:empty {
+  margin-top: 0;
+}
+.form-status.error {
+  color: #a3243b;
+}
+.form-status.success {
+  color: #2e6b3f;
+}
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}

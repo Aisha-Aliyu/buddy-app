@@ -4,6 +4,9 @@ function goBack() {
 }
 
 const API_URL = "https://buddy-app-xi0a.onrender.com"; // <- your Render backend URL
+// Render's free server sleeps when idle; waking it now means the first reply comes faster
+fetch(`${API_URL}/api/health`, { cache: "no-store" }).catch(() => {});
+const CHAT_TIMEOUT_MS = 90000;
 
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
@@ -60,21 +63,31 @@ async function sendMessage() {
 The user is feeling ${mood}. ${moodPrompt[mood] || ""}. 
 Their message: "${text}"`;
 
+  // The first message after a quiet spell can take up to a minute while the server wakes
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
+  const slowNote = setTimeout(() => {
+    appendBubble("Buddy is waking up. The first reply after a quiet spell can take up to a minute.", "bot");
+  }, 6000);
   try {
     const response = await fetch(`${API_URL}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userMessage: text, mood })
+      body: JSON.stringify({ userMessage: text, mood }),
+      signal: controller.signal
     });
 
-    const data = await response.json();
-    const botReply = data.reply || "No response from Buddy.";
+    const data = await response.json().catch(() => ({}));
+    const botReply = data.reply || "Oops! I couldn't connect to Buddy right now.";
     typingIndicator.style.display = "none";
     appendBubble(botReply, "bot");
   } catch (err) {
     console.error("Chat fetch error:", err);
     typingIndicator.style.display = "none";
-    appendBubble("Oops! I couldn't connect to Buddy right now.", "bot");
+    appendBubble("Oops! I couldn't connect to Buddy right now. Please try again in a moment.", "bot");
+  } finally {
+    clearTimeout(timer);
+    clearTimeout(slowNote);
   }
 }
 

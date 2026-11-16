@@ -1,3 +1,18 @@
-node_modules
-node_modules
+# Dependencies
+node_modules/
+
+# Environment files and keys (the server reads its secrets from Render's settings)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
