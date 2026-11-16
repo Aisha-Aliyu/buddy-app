@@ -1,11 +1,12 @@
 // In-memory counters that slow down password guessing and protect the AI budget.
 // They reset when the server restarts, which is enough for one small server.
 class AttemptLimiter {
-  constructor(limit, windowMs) {
+  constructor(limit, windowMs, maxKeys = 20000) {
     this.limit = limit;
     this.windowMs = windowMs;
+    this.maxKeys = maxKeys;
     this.hits = new Map();
-    this.lastSweep = Date.now();
+    this.lastSweep = 0;
   }
 
   prune(key, now) {
@@ -26,14 +27,23 @@ class AttemptLimiter {
 
   add(key) {
     const now = Date.now();
-    if (this.hits.size > 10000 && now - this.lastSweep > 60000) {
-      this.lastSweep = now;
-      for (const stale of [...this.hits.keys()]) this.prune(stale, now);
-      // Flooded with new keys: start over instead of growing without limit
-      if (this.hits.size > 10000) this.hits.clear();
+    if (!this.hits.has(key)) {
+      if (this.hits.size >= this.maxKeys) {
+        // Make room by dropping expired counters only (at most every 10 seconds, so a
+        // flood can't make every request scan the whole map). Active counters are never
+        // thrown away, so flooding can't reset anyone's lockout.
+        if (now - this.lastSweep > 10000) {
+          this.lastSweep = now;
+          for (const stale of [...this.hits.keys()]) this.prune(stale, now);
+        }
+        if (this.hits.size >= this.maxKeys) return;
+      }
+      this.hits.set(key, []);
     }
-    if (!this.hits.has(key)) this.hits.set(key, []);
-    this.hits.get(key).push(now);
+    const attempts = this.hits.get(key);
+    attempts.push(now);
+    // Blocking only needs the newest `limit` attempts, so older ones aren't kept
+    if (attempts.length > this.limit) attempts.shift();
   }
 
   reset(key) {

@@ -52,3 +52,28 @@ test("names are trimmed and limited", () => {
   assert.equal(cleanName("x".repeat(81)), null);
   assert.equal(cleanName({}), null);
 });
+
+test("a full limiter keeps its active counters instead of starting over", () => {
+  const limiter = new AttemptLimiter(3, 60000, 5);
+  for (let i = 0; i < 3; i++) limiter.add("target");
+  for (let i = 0; i < 10; i++) limiter.add(`flood-${i}`);
+  assert.equal(limiter.blocked("target"), true);
+  assert.ok(limiter.hits.size <= 5);
+});
+
+test("a full limiter makes room by dropping only expired counters", async () => {
+  const limiter = new AttemptLimiter(1, 20, 2);
+  limiter.add("old-1");
+  limiter.add("old-2");
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  limiter.add("new");
+  assert.equal(limiter.blocked("new"), true);
+  assert.equal(limiter.hits.has("old-1"), false);
+});
+
+test("a limiter keeps at most `limit` attempts per visitor", () => {
+  const limiter = new AttemptLimiter(3, 60000);
+  for (let i = 0; i < 100; i++) limiter.add("busy");
+  assert.equal(limiter.hits.get("busy").length, 3);
+  assert.equal(limiter.blocked("busy"), true);
+});

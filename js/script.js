@@ -103,6 +103,7 @@ async function postToBackend(path, body) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
     let response;
+    let data;
     try {
       response = await fetch(`${API_URL}${path}`, {
         method: "POST",
@@ -110,16 +111,20 @@ async function postToBackend(path, body) {
         body: JSON.stringify(body),
         signal: controller.signal,
       });
+      // The timeout also covers reading the answer, which can stall on its own
+      data = await response.json().catch((error) => {
+        if (error.name === "AbortError") throw error;
+        return {};
+      });
     } catch (error) {
-      clearTimeout(timer);
       if (error.name !== "AbortError" && Date.now() < giveUpAt) {
         await sleep(Math.min(2000 * attempt, 8000));
         continue;
       }
       return { ok: false, status: 0, data: {} };
+    } finally {
+      clearTimeout(timer);
     }
-    clearTimeout(timer);
-    const data = await response.json().catch(() => ({}));
     // Render answers with its own error page while it is still starting the server
     if (!data.message && [502, 503, 504].includes(response.status) && Date.now() < giveUpAt) {
       await sleep(Math.min(2000 * attempt, 8000));
