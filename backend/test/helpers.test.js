@@ -90,13 +90,15 @@ test("a full per-address limiter lets newcomers through and keeps its counters",
 });
 
 test("adding to a full limiter clears out expired counters on its own", () => {
-  let clock = 1000;
-  const limiter = new AttemptLimiter(1, 100, { maxKeys: 1, now: () => clock });
-  limiter.add("a");
-  clock = 1200;
-  limiter.add("b");
-  assert.equal(limiter.hits.has("a"), false);
-  assert.equal(limiter.count("b"), 1);
+  for (const whenFull of ["block", "allow"]) {
+    let clock = 1000;
+    const limiter = new AttemptLimiter(1, 100, { maxKeys: 1, whenFull, now: () => clock });
+    limiter.add("a");
+    clock = 1200;
+    limiter.add("b");
+    assert.equal(limiter.hits.has("a"), false, whenFull);
+    assert.equal(limiter.count("b"), 1, whenFull);
+  }
 });
 
 test("a full limiter makes room by dropping only expired counters", () => {

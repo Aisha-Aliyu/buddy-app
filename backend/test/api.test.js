@@ -30,6 +30,17 @@ async function call(base, path, { method = "POST", body, headers = {}, raw } = {
   return { status: res.status, body: await res.json() };
 }
 
+test("each limiter handles a full map the way its route needs", { skip: missing }, () => {
+  const auth = require("../routes/auth").limiters;
+  const chat = require("../routes/chat").limiters;
+  // Per-address limits let newcomers through when full, so a flood can't lock everyone out
+  assert.equal(auth.authRequestsByIp.whenFull, "allow");
+  assert.equal(chat.chatRequestsByIp.whenFull, "allow");
+  // Wrong-password limits block newcomers when full, so guessing protection stays on
+  assert.equal(auth.failedLogins.whenFull, "block");
+  assert.equal(auth.failedLoginsForEmail.whenFull, "block");
+});
+
 test("chat route", { skip: missing }, async (t) => {
   let lastRequest = null;
   let fail = false;

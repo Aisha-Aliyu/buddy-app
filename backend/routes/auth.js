@@ -32,6 +32,8 @@ const tooManyAttempts = (res) =>
 const databaseUnavailable = (res) =>
   res.status(503).json({ message: "Accounts are unavailable right now because the server can't reach its database. Please try again in a minute." });
 
+router.limiters = { authRequestsByIp, failedLogins, failedLoginsForEmail };
+
 router.resetLimits = () => {
   for (const limiter of [authRequestsByIp, failedLogins, failedLoginsForEmail]) limiter.reset();
 };

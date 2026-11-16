@@ -28,6 +28,7 @@ const moodPrompt = {
 
 const AI_UNAVAILABLE = "Buddy couldn't reach the AI service just now. Please try again in a moment.";
 
+router.limiters = { chatRequestsByIp };
 router.resetLimits = () => chatRequestsByIp.reset();
 
 router.post("/", async (req, res) => {
