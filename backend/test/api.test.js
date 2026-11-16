@@ -3,16 +3,20 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 
 // These tests need the installed packages, and the account tests also need a MongoDB
-// database (CI starts one and sets MONGODB_URI_TEST)
+// database (CI starts one and sets MONGODB_URI_TEST). Locally they skip when either is
+// missing; on CI nothing is skipped.
+if (process.env.CI && !process.env.MONGODB_URI_TEST) throw new Error("MONGODB_URI_TEST must be set on CI");
 let app, mongoose, bcrypt, missing = false;
 try {
   app = require("../app");
   mongoose = require("mongoose");
   bcrypt = require("bcryptjs");
 } catch (err) {
-  // Only a missing package (npm install not run yet) skips these tests. Any other error,
-  // like a broken file in the app, fails them, and on CI nothing is skipped.
-  const missingPackage = err.code === "MODULE_NOT_FOUND" && !/Cannot find module '\.{1,2}\//.test(err.message);
+  // Only one of the app's own packages not being installed yet skips these tests. Any
+  // other error, like a broken file or a misspelled module name, fails them.
+  const { dependencies = {} } = require("../package.json");
+  const name = /Cannot find module '([^']+)'/.exec(err.message)?.[1];
+  const missingPackage = err.code === "MODULE_NOT_FOUND" && Object.hasOwn(dependencies, name ?? "");
   if (process.env.CI || !missingPackage) throw err;
   missing = `packages not installed (${err.message.split("\n")[0]})`;
 }
