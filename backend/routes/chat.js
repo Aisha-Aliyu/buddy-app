@@ -4,8 +4,9 @@ const { AttemptLimiter, clientIp } = require("../lib/limits");
 const router = express.Router();
 
 const MAX_MESSAGE_LENGTH = 2000;
-// Every reply uses the AI service, so one visitor gets 30 messages per 10 minutes
-const chatRequestsByIp = new AttemptLimiter(30, 10 * 60 * 1000);
+// Every reply uses the AI service, so one visitor gets 30 messages per 10 minutes. If the
+// limiter ever fills up, newcomers get through rather than chat closing for everyone.
+const chatRequestsByIp = new AttemptLimiter(30, 10 * 60 * 1000, { whenFull: "allow" });
 // OpenRouter's free router picks whichever free model is available, so the chat keeps
 // working without credits. OPENROUTER_MODEL can name a specific model instead.
 const DEFAULT_MODEL = "openrouter/free";

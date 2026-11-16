@@ -33,6 +33,7 @@ test("client IP can't be faked through X-Forwarded-For", () => {
   assert.equal(clientIp(req({})), "10.0.0.9");
   // Only Cloudflare Enterprise sets True-Client-IP, so a visitor could send their own
   assert.equal(clientIp(req({ "true-client-ip": "6.6.6.6" })), "10.0.0.9");
+  assert.equal(clientIp(req({ "x-forwarded-for": "1.2.3.4, 2001:db8:1:2345::7" })), "2001:0db8:0001:2300::/56");
 });
 
 test("IPv6 visitors are counted by their /56 network", () => {
@@ -74,6 +75,28 @@ test("a full limiter keeps its active counters and blocks anyone new", () => {
   assert.equal(limiter.blocked("target"), true);
   assert.equal(limiter.blocked("flood-0"), false);
   assert.equal(limiter.blocked("someone-new"), true);
+});
+
+test("a full per-address limiter lets newcomers through and keeps its counters", () => {
+  const limiter = new AttemptLimiter(3, 60000, { maxKeys: 5, whenFull: "allow" });
+  for (let i = 0; i < 3; i++) limiter.add("target");
+  for (let i = 0; i < 10; i++) limiter.add(`flood-${i}`);
+  assert.equal(limiter.hits.size, 5);
+  assert.equal(limiter.blocked("target"), true);
+  assert.equal(limiter.blocked("someone-new"), false);
+  limiter.add("someone-new");
+  assert.equal(limiter.hits.size, 5);
+  assert.throws(() => new AttemptLimiter(1, 1000, { whenFull: "maybe" }));
+});
+
+test("adding to a full limiter clears out expired counters on its own", () => {
+  let clock = 1000;
+  const limiter = new AttemptLimiter(1, 100, { maxKeys: 1, now: () => clock });
+  limiter.add("a");
+  clock = 1200;
+  limiter.add("b");
+  assert.equal(limiter.hits.has("a"), false);
+  assert.equal(limiter.count("b"), 1);
 });
 
 test("a full limiter makes room by dropping only expired counters", () => {

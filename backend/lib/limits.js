@@ -3,10 +3,15 @@ const net = require("node:net");
 // In-memory counters that slow down password guessing and protect the AI budget.
 // They reset when the server restarts, which is enough for one small server.
 class AttemptLimiter {
-  constructor(limit, windowMs, { maxKeys = 20000, now = Date.now } = {}) {
+  // whenFull says what happens to someone new while the map is full: "block" counts them
+  // as over the limit, "allow" lets them through uncounted. Each route picks the one
+  // that suits what its limiter protects.
+  constructor(limit, windowMs, { maxKeys = 20000, whenFull = "block", now = Date.now } = {}) {
+    if (whenFull !== "block" && whenFull !== "allow") throw new Error(`Unknown whenFull: ${whenFull}`);
     this.limit = limit;
     this.windowMs = windowMs;
     this.maxKeys = maxKeys;
+    this.whenFull = whenFull;
     this.now = now;
     this.hits = new Map();
     this.lastSweep = -Infinity;
@@ -36,9 +41,8 @@ class AttemptLimiter {
     this.prune(key, now);
     const attempts = this.hits.get(key);
     if (attempts) return attempts.length;
-    // While the map is full, anyone it can't track counts as blocked. Letting them
-    // through instead would switch the limits off exactly when someone is flooding them.
-    return this.hasRoom(now) ? 0 : this.limit;
+    if (this.whenFull === "allow" || this.hasRoom(now)) return 0;
+    return this.limit;
   }
 
   blocked(key) {

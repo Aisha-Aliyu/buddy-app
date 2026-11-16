@@ -9,7 +9,13 @@ const { cleanEmail, normalizeEmail, cleanName } = require('../lib/validate');
 // one address), and wrong passwords per visitor and account. A looser count per account
 // slows guessing spread over many addresses; it only stops visitors who have already
 // got that account's password wrong, so the owner can still sign in.
-const authRequestsByIp = new AttemptLimiter(60, 10 * 60 * 1000);
+//
+// If a limiter ever fills up, the per-address one lets newcomers through: filling it
+// takes tens of thousands of addresses, which already beats any per-address limit, and
+// blocking would lock out every new visitor. The wrong-password ones block newcomers
+// instead. Each of their entries costs a password check, so this server can't fill them,
+// and letting newcomers through would switch off the guessing protection.
+const authRequestsByIp = new AttemptLimiter(60, 10 * 60 * 1000, { whenFull: 'allow' });
 const failedLogins = new AttemptLimiter(8, 15 * 60 * 1000);
 const failedLoginsForEmail = new AttemptLimiter(50, 60 * 60 * 1000);
 
