@@ -2,15 +2,11 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
 
-// These tests need the installed packages, and the account tests also need a MongoDB
-// database (CI starts one and sets MONGODB_URI_TEST). Locally they skip when either is
-// missing; on CI nothing is skipped.
-if (process.env.CI && !process.env.MONGODB_URI_TEST) throw new Error("MONGODB_URI_TEST must be set on CI");
-let app, mongoose, bcrypt, missing = false;
+// These tests need the installed packages. Locally they skip until npm install has run;
+// on CI nothing is skipped.
+let app, missing = false;
 try {
   app = require("../app");
-  mongoose = require("mongoose");
-  bcrypt = require("bcryptjs");
 } catch (err) {
   // Only one of the app's own packages not being installed yet skips these tests. Any
   // other error, like a broken file or a misspelled module name, fails them.
@@ -34,152 +30,127 @@ async function call(base, path, { method = "POST", body, headers = {}, raw } = {
   return { status: res.status, body: await res.json() };
 }
 
-test("each limiter handles a full map the way its route needs", { skip: missing }, () => {
-  const auth = require("../routes/auth").limiters;
-  const chat = require("../routes/chat").limiters;
-  // Per-address limits let newcomers through when full, so a flood can't lock everyone out
-  assert.equal(auth.authRequestsByIp.whenFull, "allow");
-  assert.equal(chat.chatRequestsByIp.whenFull, "allow");
-  // Wrong-password limits block newcomers when full, so guessing protection stays on
-  assert.equal(auth.failedLogins.whenFull, "block");
-  assert.equal(auth.failedLoginsForEmail.whenFull, "block");
-});
-
-test("chat route", { skip: missing }, async (t) => {
-  let lastRequest = null;
-  let fail = false;
-  const fakeOpenRouter = http.createServer((req, res) => {
+// A stand-in for OpenRouter or Firebase: handler gets the request and returns [status, json]
+function fakeService(handler) {
+  return http.createServer((req, res) => {
     let data = "";
     req.on("data", (chunk) => (data += chunk));
     req.on("end", () => {
-      lastRequest = { headers: req.headers, body: JSON.parse(data) };
-      res.writeHead(fail ? 500 : 200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(fail ? { error: "down" } : { choices: [{ message: { content: " Hello from the test " } }] }));
+      const [status, payload] = handler({ url: req.url, headers: req.headers, body: data ? JSON.parse(data) : {} });
+      res.writeHead(status, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(payload));
     });
   });
-  process.env.OPENROUTER_URL = await listen(fakeOpenRouter);
+}
+
+test("the chat's limiters let newcomers through when full", { skip: missing }, () => {
+  const { chatRequestsByIp, chatRequestsByUser } = require("../routes/chat").limiters;
+  // Blocking newcomers in a full limiter would let a flood close the chat for everyone
+  assert.equal(chatRequestsByIp.whenFull, "allow");
+  assert.equal(chatRequestsByUser.whenFull, "allow");
+});
+
+test("chat route", { skip: missing }, async () => {
+  let aiCalls = 0;
+  let lastAiRequest = null;
+  let aiFails = false;
+  const openRouter = fakeService((request) => {
+    aiCalls++;
+    lastAiRequest = request;
+    return aiFails ? [500, { error: "down" }] : [200, { choices: [{ message: { content: " Hello from the test " } }] }];
+  });
+
+  // Tokens shaped "good.<uid>.sig" belong to <uid>; Firebase refuses anything else
+  let firebaseDown = false;
+  const lookups = [];
+  const firebase = fakeService((request) => {
+    lookups.push(request);
+    if (firebaseDown) return [503, {}];
+    const [kind, uid] = String(request.body.idToken).split(".");
+    if (kind === "good") return [200, { users: [{ localId: uid, email: `${uid}@example.com` }] }];
+    return [400, { error: { code: 400, message: "INVALID_ID_TOKEN" } }];
+  });
+
+  process.env.OPENROUTER_URL = await listen(openRouter);
+  process.env.FIREBASE_AUTH_URL = `${await listen(firebase)}/lookup`;
   process.env.OPENROUTER_KEY = "test-key";
+  process.env.FIREBASE_API_KEY = "firebase-web-key";
   delete process.env.OPENROUTER_MODEL;
+  require("../routes/chat").resetLimits();
   const server = app.listen(0);
   const base = `http://127.0.0.1:${server.address().port}`;
-  const visitor = { "CF-Connecting-IP": "203.0.113.10" };
+  const chat = (userMessage, headers, extra = {}) => call(base, "/api/chat", { body: { userMessage, ...extra }, headers });
+  const as = (uid, ip = "203.0.113.10") => ({ "CF-Connecting-IP": ip, Authorization: `Bearer good.${uid}.sig` });
 
   try {
     const health = await call(base, "/api/health", { method: "GET" });
     assert.equal(health.status, 200);
-    assert.equal(health.body.status, "ok");
+    assert.deepEqual(health.body, { status: "ok" });
 
-    const ok = await call(base, "/api/chat", { body: { userMessage: "I had a rough day", mood: "Sad" }, headers: visitor });
+    // A signed-in message reaches the AI with the right prompt
+    const ok = await chat("I had a rough day", as("ada"), { mood: "Sad" });
     assert.equal(ok.status, 200);
     assert.equal(ok.body.reply, "Hello from the test");
-    assert.equal(lastRequest.headers.authorization, "Bearer test-key");
-    assert.equal(lastRequest.body.model, "openrouter/free");
-    assert.match(lastRequest.body.messages[0].content, /feel Sad/);
-    assert.equal(lastRequest.body.messages[1].content, "I had a rough day");
+    assert.equal(lastAiRequest.headers.authorization, "Bearer test-key");
+    assert.equal(lastAiRequest.body.model, "openrouter/free");
+    assert.match(lastAiRequest.body.messages[0].content, /feel Sad/);
+    assert.equal(lastAiRequest.body.messages[1].content, "I had a rough day");
+    assert.equal(lookups.at(-1).url, "/lookup?key=firebase-web-key");
+    assert.equal(lookups.at(-1).body.idToken, "good.ada.sig");
 
-    assert.equal((await call(base, "/api/chat", { body: { userMessage: "   " }, headers: visitor })).status, 400);
-    assert.equal((await call(base, "/api/chat", { body: { userMessage: "x".repeat(2001) }, headers: visitor })).status, 400);
+    // No token, or one Firebase refuses, never reaches the AI
+    const callsBefore = aiCalls;
+    const visitor = { "CF-Connecting-IP": "203.0.113.12" };
+    const noToken = await chat("hello", visitor);
+    assert.equal(noToken.status, 401);
+    assert.match(noToken.body.reply, /sign in/i);
+    assert.equal((await chat("hello", { ...visitor, Authorization: "Bearer bad.token.sig" })).status, 401);
+    assert.equal((await chat("hello", { ...visitor, Authorization: "Basic abc" })).status, 401);
+    assert.equal(aiCalls, callsBefore);
 
-    fail = true;
-    const down = await call(base, "/api/chat", { body: { userMessage: "hello" }, headers: visitor });
-    assert.equal(down.status, 502);
-    assert.match(down.body.reply, /couldn't reach the AI service/);
-    fail = false;
+    // Firebase answering with an error, or not answering at all, is a 503, not a sign-out
+    firebaseDown = true;
+    assert.equal((await chat("hello", as("ada"))).status, 503);
+    firebaseDown = false;
+    const firebaseUrl = process.env.FIREBASE_AUTH_URL;
+    const closed = http.createServer();
+    process.env.FIREBASE_AUTH_URL = `${await listen(closed)}/lookup`;
+    await new Promise((resolve) => closed.close(resolve));
+    const unreachable = await chat("hello", as("ada"));
+    assert.equal(unreachable.status, 503);
+    assert.match(unreachable.body.reply, /can't check your sign-in/);
+    process.env.FIREBASE_AUTH_URL = firebaseUrl;
 
+    // Missing settings on the server give a clear 503
+    delete process.env.FIREBASE_API_KEY;
+    assert.equal((await chat("hello", as("ada"))).status, 503);
+    process.env.FIREBASE_API_KEY = "firebase-web-key";
     delete process.env.OPENROUTER_KEY;
-    const noKey = await call(base, "/api/chat", { body: { userMessage: "hello" }, headers: visitor });
-    assert.equal(noKey.status, 503);
+    assert.equal((await chat("hello", as("ada"))).status, 503);
     process.env.OPENROUTER_KEY = "test-key";
 
-    // 30 messages per visitor per 10 minutes
-    const busy = { "CF-Connecting-IP": "203.0.113.11" };
-    for (let i = 0; i < 30; i++) {
-      assert.equal((await call(base, "/api/chat", { body: { userMessage: `hi ${i}` }, headers: busy })).status, 200);
-    }
-    assert.equal((await call(base, "/api/chat", { body: { userMessage: "one more" }, headers: busy })).status, 429);
+    assert.equal((await chat("   ", as("ada"))).status, 400);
+    assert.equal((await chat("x".repeat(2001), as("ada"))).status, 400);
 
-    const badJson = await call(base, "/api/chat", { raw: "{not json" });
-    assert.equal(badJson.status, 400);
-    const tooBig = await call(base, "/api/chat", { body: { userMessage: "x".repeat(30000) } });
-    assert.equal(tooBig.status, 413);
+    aiFails = true;
+    const aiDown = await chat("hello", as("ada"));
+    assert.equal(aiDown.status, 502);
+    assert.match(aiDown.body.reply, /couldn't reach the AI service/);
+    aiFails = false;
+
+    // 30 messages per account per 10 minutes, even when the address changes
+    for (let i = 0; i < 30; i++) assert.equal((await chat(`hi ${i}`, as("busy", `198.51.100.${i}`))).status, 200);
+    assert.equal((await chat("one more", as("busy", "198.51.100.99"))).status, 429);
+
+    // And 30 per address, even across accounts
+    for (let i = 0; i < 30; i++) assert.equal((await chat(`hi ${i}`, as(`user${i}`, "203.0.113.50"))).status, 200);
+    assert.equal((await chat("one more", as("fresh", "203.0.113.50"))).status, 429);
+
+    assert.equal((await call(base, "/api/chat", { raw: "{not json" })).status, 400);
+    assert.equal((await call(base, "/api/chat", { body: { userMessage: "x".repeat(30000) } })).status, 413);
   } finally {
     server.close();
-    fakeOpenRouter.close();
-  }
-});
-
-test("sign-up and sign-in against a real database", {
-  skip: missing || (!process.env.MONGODB_URI_TEST && "MONGODB_URI_TEST is not set"),
-}, async () => {
-  await mongoose.connect(process.env.MONGODB_URI_TEST);
-  await mongoose.connection.dropDatabase();
-  const User = require("../models/user");
-  await User.init();
-  const server = app.listen(0);
-  const base = `http://127.0.0.1:${server.address().port}`;
-  const me = { "CF-Connecting-IP": "198.51.100.20" };
-
-  try {
-    const health = await call(base, "/api/health", { method: "GET" });
-    assert.equal(health.body.database, "ok");
-
-    assert.equal((await call(base, "/api/signup", { body: { fullname: "Ada", email: "ada@example.com", password: "short" }, headers: me })).status, 400);
-    assert.equal((await call(base, "/api/signup", { body: { fullname: "Ada", email: "not-an-email", password: "long enough" }, headers: me })).status, 400);
-    assert.equal((await call(base, "/api/signup", { body: { fullname: " ", email: "ada@example.com", password: "long enough" }, headers: me })).status, 400);
-
-    const created = await call(base, "/api/signup", { body: { fullname: "Ada Lovelace", email: "Ada@Example.com", password: "long enough" }, headers: me });
-    assert.equal(created.status, 201);
-    assert.equal(created.body.name, "Ada Lovelace");
-    assert.equal((await User.findOne({ fullname: "Ada Lovelace" })).email, "ada@example.com");
-
-    const duplicate = await call(base, "/api/signup", { body: { fullname: "Ada", email: "ADA@example.com", password: "long enough" }, headers: me });
-    assert.equal(duplicate.status, 409);
-
-    const wrong = await call(base, "/api/signin", { body: { email: "ada@example.com", password: "wrong password" }, headers: me });
-    assert.equal(wrong.status, 401);
-    const signedIn = await call(base, "/api/signin", { body: { email: "ADA@example.COM", password: "long enough" }, headers: me });
-    assert.equal(signedIn.status, 200);
-    assert.equal(signedIn.body.name, "Ada Lovelace");
-
-    // Accounts made before this change kept the email exactly as typed, and some used
-    // addresses the new sign-up check would refuse
-    await User.create({ fullname: "Old Account", email: "Legacy@Example.com", passwordHash: await bcrypt.hash("old password", 10) });
-    const legacy = await call(base, "/api/signin", { body: { email: "legacy@example.com", password: "old password" }, headers: me });
-    assert.equal(legacy.status, 200);
-    assert.equal(legacy.body.name, "Old Account");
-    await User.create({ fullname: "Local Account", email: "Someone@LocalHost", passwordHash: await bcrypt.hash("old password", 10) });
-    const local = await call(base, "/api/signin", { body: { email: "someone@localhost", password: "old password" }, headers: me });
-    assert.equal(local.status, 200);
-    const nobody = await call(base, "/api/signin", { body: { email: "nobody@example.com", password: "not a real password" }, headers: me });
-    assert.equal(nobody.status, 401);
-
-    // Eight wrong passwords lock that visitor out of the account, but not its owner
-    const attacker = { "CF-Connecting-IP": "203.0.113.66" };
-    for (let i = 0; i < 8; i++) {
-      assert.equal((await call(base, "/api/signin", { body: { email: "ada@example.com", password: "guess guess" }, headers: attacker })).status, 401);
-    }
-    assert.equal((await call(base, "/api/signin", { body: { email: "ada@example.com", password: "long enough" }, headers: attacker })).status, 429);
-    const owner = { "CF-Connecting-IP": "198.51.100.21" };
-    assert.equal((await call(base, "/api/signin", { body: { email: "ada@example.com", password: "long enough" }, headers: owner })).status, 200);
-
-    // Guessing spread over many addresses: past 50 wrong passwords in an hour, each new
-    // address gets one guess, while the owner can still sign in
-    await User.create({ fullname: "Grace", email: "grace@example.com", passwordHash: await bcrypt.hash("right password", 10) });
-    const guess = (n) => call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: { "CF-Connecting-IP": `203.0.113.${n}` } });
-    // Six addresses use up their eight guesses each (48), a seventh adds two (50)
-    for (let n = 100; n < 106; n++) {
-      for (let i = 0; i < 8; i++) assert.equal((await guess(n)).status, 401);
-    }
-    assert.equal((await guess(106)).status, 401);
-    assert.equal((await guess(106)).status, 401);
-    assert.equal((await guess(106)).status, 429);
-    const fresh = { "CF-Connecting-IP": "203.0.113.200" };
-    assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: fresh })).status, 401);
-    assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "guess" }, headers: fresh })).status, 429);
-    const grace = { "CF-Connecting-IP": "198.51.100.30" };
-    assert.equal((await call(base, "/api/signin", { body: { email: "grace@example.com", password: "right password" }, headers: grace })).status, 200);
-  } finally {
-    server.close();
-    await mongoose.disconnect();
+    openRouter.close();
+    firebase.close();
   }
 });

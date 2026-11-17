@@ -1,20 +1,12 @@
 // backend/server.js
 require("dotenv").config();
-const mongoose = require("mongoose");
 const app = require("./app");
 
-// Connect to MongoDB. The server starts either way, so the health check and the error
-// messages still work while the database is unreachable.
-const uri = (process.env.MONGODB_URI || "").trim();
-if (!uri) {
-  console.error("MONGODB_URI is not set, so sign-up and sign-in won't work");
-} else {
-  mongoose
-    .connect(uri)
-    .then(() => console.log("MongoDB connected"))
-    .catch((err) => console.error("MongoDB connection error:", err.message));
+// The chat needs both of these. Without them it still starts and answers with a clear
+// "not set up" message, so the problem shows in the logs here.
+for (const name of ["FIREBASE_API_KEY", "OPENROUTER_KEY"]) {
+  if (!(process.env[name] || "").trim()) console.error(`${name} is not set, so the chat won't work`);
 }
-mongoose.connection.on("disconnected", () => console.warn("MongoDB disconnected"));
 
 // Start Server
 const PORT = process.env.PORT || 5000;

@@ -1,12 +1,16 @@
 // backend/routes/chat.js
 const express = require("express");
 const { AttemptLimiter, clientIp } = require("../lib/limits");
+const { lookupUser } = require("../lib/firebase-auth");
 const router = express.Router();
 
 const MAX_MESSAGE_LENGTH = 2000;
 // Every reply uses the AI service, so one visitor gets 30 messages per 10 minutes. If the
 // limiter ever fills up, newcomers get through rather than chat closing for everyone.
 const chatRequestsByIp = new AttemptLimiter(30, 10 * 60 * 1000, { whenFull: "allow" });
+// The same 30 per 10 minutes for each signed-in account, so someone switching addresses
+// still can't use up the AI from one account
+const chatRequestsByUser = new AttemptLimiter(30, 10 * 60 * 1000, { whenFull: "allow" });
 // OpenRouter's free router picks whichever free model is available, so the chat keeps
 // working without credits. OPENROUTER_MODEL can name a specific model instead.
 const DEFAULT_MODEL = "openrouter/free";
@@ -27,9 +31,13 @@ const moodPrompt = {
 };
 
 const AI_UNAVAILABLE = "Buddy couldn't reach the AI service just now. Please try again in a moment.";
+const TOO_MANY = "You've sent a lot of messages in a short time. Please take a short break and try again in a few minutes.";
 
-router.limiters = { chatRequestsByIp };
-router.resetLimits = () => chatRequestsByIp.reset();
+router.limiters = { chatRequestsByIp, chatRequestsByUser };
+router.resetLimits = () => {
+  chatRequestsByIp.reset();
+  chatRequestsByUser.reset();
+};
 
 router.post("/", async (req, res) => {
   const userMessage = typeof req.body?.userMessage === "string" ? req.body.userMessage.trim() : "";
@@ -40,9 +48,27 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ reply: `That message is a bit long. Please keep it under ${MAX_MESSAGE_LENGTH} characters.` });
 
   const ip = clientIp(req);
-  if (chatRequestsByIp.blocked(ip))
-    return res.status(429).json({ reply: "You've sent a lot of messages in a short time. Please take a short break and try again in a few minutes." });
+  if (chatRequestsByIp.blocked(ip)) return res.status(429).json({ reply: TOO_MANY });
   chatRequestsByIp.add(ip);
+
+  // Only signed-in people can chat, so the AI can't be used by anyone who finds this address
+  const firebaseKey = (process.env.FIREBASE_API_KEY || "").trim();
+  if (!firebaseKey) {
+    console.error("FIREBASE_API_KEY not set in environment");
+    return res.status(503).json({ reply: "Buddy can't chat right now because sign-in isn't set up on the server." });
+  }
+  const token = /^Bearer (\S+)$/i.exec(req.get("authorization") || "")?.[1];
+  if (!token) return res.status(401).json({ reply: "Please sign in first so we can chat." });
+  let user;
+  try {
+    user = await lookupUser(token, { apiKey: firebaseKey });
+  } catch (err) {
+    console.error("Sign-in check failed:", err.message);
+    return res.status(503).json({ reply: "Buddy can't check your sign-in right now. Please try again in a moment." });
+  }
+  if (!user) return res.status(401).json({ reply: "Your sign-in has expired. Please sign in again." });
+  if (chatRequestsByUser.blocked(user.uid)) return res.status(429).json({ reply: TOO_MANY });
+  chatRequestsByUser.add(user.uid);
 
   const openRouterKey = (process.env.OPENROUTER_KEY || "").trim();
   if (!openRouterKey) {

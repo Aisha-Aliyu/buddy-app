@@ -1,7 +1,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { AttemptLimiter, clientIp } = require("../lib/limits");
-const { cleanEmail, normalizeEmail, cleanName } = require("../lib/validate");
+const http = require("node:http");
+const { lookupUser, AuthCheckError } = require("../lib/firebase-auth");
 
 test("limiter blocks after the limit and resets", () => {
   const limiter = new AttemptLimiter(3, 60000);
@@ -44,27 +45,6 @@ test("IPv6 visitors are counted by their /56 network", () => {
   assert.equal(ip("::ffff:203.0.113.9"), "203.0.113.9");
   assert.equal(ip("203.0.113.9"), "203.0.113.9");
   assert.equal(clientIp({ headers: {}, socket: { remoteAddress: "::ffff:10.0.0.9" } }), "10.0.0.9");
-});
-
-test("sign-in accepts any address an older account might have used", () => {
-  assert.equal(normalizeEmail("  Old.User@LocalHost "), "old.user@localhost");
-  assert.equal(normalizeEmail("no-at-sign"), null);
-  assert.equal(normalizeEmail(""), null);
-  assert.equal(normalizeEmail(7), null);
-});
-
-test("emails are trimmed, lowercased and must be a single bare address", () => {
-  assert.equal(cleanEmail("  Aisha@Example.COM "), "aisha@example.com");
-  for (const bad of ["", "no-at-sign", "a@b", "Boss <boss@example.com>", "a@example.com,b@example.com", 42, null]) {
-    assert.equal(cleanEmail(bad), null, String(bad));
-  }
-});
-
-test("names are trimmed and limited", () => {
-  assert.equal(cleanName("  Aisha   Aliyu "), "Aisha Aliyu");
-  assert.equal(cleanName("   "), null);
-  assert.equal(cleanName("x".repeat(81)), null);
-  assert.equal(cleanName({}), null);
 });
 
 test("a full limiter keeps its active counters and blocks anyone new", () => {
@@ -139,4 +119,81 @@ test("a full limiter looks for expired counters at most every 10 seconds", () =>
   assert.equal(limiter.blocked("b"), true);
   clock = 11001;
   assert.equal(limiter.blocked("b"), false);
+});
+
+// A stand-in for Firebase's accounts:lookup endpoint
+async function fakeFirebase(handler) {
+  const seen = [];
+  const server = http.createServer((req, res) => {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      const request = { url: req.url, body: JSON.parse(body || "{}") };
+      seen.push(request);
+      const [status, payload] = handler(request);
+      res.writeHead(status, { "Content-Type": "application/json" });
+      // A string is sent as it is, to imitate an answer that isn't valid JSON
+      res.end(typeof payload === "string" ? payload : JSON.stringify(payload));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  return { url: `http://127.0.0.1:${server.address().port}/lookup`, seen, close: () => server.close() };
+}
+
+const firebaseError = (message) => [400, { error: { code: 400, message } }];
+
+test("a valid Firebase token gives back who it belongs to", async () => {
+  const firebase = await fakeFirebase(() => [200, { users: [{ localId: "u1", email: "ada@example.com", displayName: "Ada" }] }]);
+  try {
+    const user = await lookupUser("aaa.bbb.ccc", { apiKey: "web key", url: firebase.url });
+    assert.deepEqual(user, { uid: "u1", email: "ada@example.com", name: "Ada" });
+    assert.equal(firebase.seen[0].url, "/lookup?key=web%20key");
+    assert.deepEqual(firebase.seen[0].body, { idToken: "aaa.bbb.ccc" });
+  } finally {
+    firebase.close();
+  }
+});
+
+test("bad, expired or deleted-account tokens are refused", async () => {
+  const answers = {
+    "bad.token.x": firebaseError("INVALID_ID_TOKEN"),
+    "old.token.x": firebaseError("TOKEN_EXPIRED : The user's credential is no longer valid."),
+    "gone.token.x": firebaseError("USER_NOT_FOUND"),
+    "banned.token.x": firebaseError("USER_DISABLED"),
+    "off.token.x": [200, { users: [{ localId: "u2", disabled: true }] }],
+    "none.token.x": [200, {}],
+  };
+  const firebase = await fakeFirebase((request) => answers[request.body.idToken]);
+  try {
+    for (const token of Object.keys(answers)) {
+      assert.equal(await lookupUser(token, { apiKey: "k", url: firebase.url }), null, token);
+    }
+    // Things that can't be a Firebase token aren't sent to Firebase at all
+    for (const token of [undefined, 42, "no-dots", "a.b", "x".repeat(5000) + ".y.z"]) {
+      assert.equal(await lookupUser(token, { apiKey: "k", url: firebase.url }), null);
+    }
+    assert.equal(firebase.seen.length, Object.keys(answers).length);
+  } finally {
+    firebase.close();
+  }
+});
+
+test("Firebase being down or a wrong API key is an error, not a refusal", async () => {
+  const answers = {
+    "key.problem.x": firebaseError("API key not valid. Please pass a valid API key."),
+    "garbled.ok.x": [200, "{not json"],
+    "garbled.error.x": [400, "<html>Bad Request</html>"],
+  };
+  const firebase = await fakeFirebase((request) => answers[request.body.idToken] || [500, {}]);
+  try {
+    await assert.rejects(lookupUser("key.problem.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
+    await assert.rejects(lookupUser("server.error.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
+    // A success Firebase can't be read from is a failed check, not a signed-out user
+    await assert.rejects(lookupUser("garbled.ok.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
+    await assert.rejects(lookupUser("garbled.error.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
+  } finally {
+    firebase.close();
+  }
+  // Nothing listening any more: the connection itself fails
+  await assert.rejects(lookupUser("a.b.c", { apiKey: "k", url: firebase.url }), AuthCheckError);
 });
