@@ -14,6 +14,16 @@ import { auth, currentUser, friendlyError } from "./firebase.js";
 
 const MIN_PASSWORD = 8;
 
+// localStorage can throw (full, or blocked by the browser). These saves are only for the
+// greeting and old data, so a failure is logged and never undoes a sign-in or sign-out.
+function saveLocally(change) {
+  try {
+    change(localStorage);
+  } catch (error) {
+    console.warn("Couldn't update this phone's saved data:", error);
+  }
+}
+
 function setStatus(form, message, kind = "") {
   const status = form.querySelector(".form-status");
   if (!status) return;
@@ -53,7 +63,7 @@ signupForm?.addEventListener("submit", (event) => {
 
   whileBusy(signupForm, "Creating account...", async () => {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    localStorage.setItem("userName", name);
+    saveLocally((storage) => storage.setItem("userName", name));
     // The account exists by now, so a hiccup saving the name shouldn't stop sign-up
     await updateProfile(user, { displayName: name }).catch((error) => console.error("Couldn't save the name:", error?.code));
     setStatus(signupForm, "Account created. Taking you in...", "success");
@@ -70,7 +80,7 @@ loginForm?.addEventListener("submit", (event) => {
 
   whileBusy(loginForm, "Signing in...", async () => {
     const { user } = await signInWithEmailAndPassword(auth, email, password);
-    localStorage.setItem("userName", user.displayName || email.split("@")[0]);
+    saveLocally((storage) => storage.setItem("userName", user.displayName || email.split("@")[0]));
     window.location.href = "homepage.html";
   });
 });
@@ -92,7 +102,7 @@ loginForm?.querySelector(".password-options a")?.addEventListener("click", async
 // --- Profile page: log out ---
 document.querySelector(".logout-btn")?.addEventListener("click", async () => {
   await signOut(auth).catch((error) => console.error("Sign-out failed:", error?.code));
-  localStorage.removeItem("userName");
+  saveLocally((storage) => storage.removeItem("userName"));
   window.location.href = "signin.html";
 });
 
@@ -102,7 +112,7 @@ const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
 if (saveButton && emailInput && passwordInput) {
   // Older versions saved the password here in plain text; accounts live in Firebase now
-  localStorage.removeItem("profilePassword");
+  saveLocally((storage) => storage.removeItem("profilePassword"));
   // Show the account's real email in place of the page's placeholder one
   currentUser().then((user) => {
     if (user && emailInput.value === emailInput.defaultValue) emailInput.value = user.email || "";
@@ -146,7 +156,7 @@ document.getElementById("deleteAccount")?.addEventListener("click", async () => 
   } catch (error) {
     return alert(friendlyError(error));
   }
-  localStorage.clear();
+  saveLocally((storage) => storage.clear());
   alert("Your account has been deleted.");
   window.location.href = "welcome.html";
 });

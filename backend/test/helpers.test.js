@@ -132,7 +132,8 @@ async function fakeFirebase(handler) {
       seen.push(request);
       const [status, payload] = handler(request);
       res.writeHead(status, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(payload));
+      // A string is sent as it is, to imitate an answer that isn't valid JSON
+      res.end(typeof payload === "string" ? payload : JSON.stringify(payload));
     });
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -178,11 +179,18 @@ test("bad, expired or deleted-account tokens are refused", async () => {
 });
 
 test("Firebase being down or a wrong API key is an error, not a refusal", async () => {
-  const firebase = await fakeFirebase((request) =>
-    request.body.idToken === "key.problem.x" ? firebaseError("API key not valid. Please pass a valid API key.") : [500, {}]);
+  const answers = {
+    "key.problem.x": firebaseError("API key not valid. Please pass a valid API key."),
+    "garbled.ok.x": [200, "{not json"],
+    "garbled.error.x": [400, "<html>Bad Request</html>"],
+  };
+  const firebase = await fakeFirebase((request) => answers[request.body.idToken] || [500, {}]);
   try {
     await assert.rejects(lookupUser("key.problem.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
     await assert.rejects(lookupUser("server.error.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
+    // A success Firebase can't be read from is a failed check, not a signed-out user
+    await assert.rejects(lookupUser("garbled.ok.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
+    await assert.rejects(lookupUser("garbled.error.x", { apiKey: "k", url: firebase.url }), AuthCheckError);
   } finally {
     firebase.close();
   }

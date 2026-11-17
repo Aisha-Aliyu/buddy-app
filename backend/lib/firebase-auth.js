@@ -24,7 +24,14 @@ async function lookupUser(idToken, { apiKey, url = process.env.FIREBASE_AUTH_URL
   } catch (err) {
     throw new AuthCheckError(`Couldn't reach Firebase: ${err.message}`);
   }
-  const data = await response.json().catch(() => ({}));
+  let data;
+  try {
+    data = await response.json();
+  } catch (err) {
+    // A success whose answer can't be read says nothing about the token
+    if (response.ok) throw new AuthCheckError(`Couldn't read Firebase's answer: ${err.message}`);
+    data = {};
+  }
 
   if (response.ok) {
     const user = data.users?.[0];

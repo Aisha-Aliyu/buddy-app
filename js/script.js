@@ -114,7 +114,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Older versions of the profile page saved the password in this browser in plain text.
 // Accounts live in Firebase now, so clear it out.
-localStorage.removeItem("profilePassword");
+try {
+  localStorage.removeItem("profilePassword");
+} catch {
+  // Storage is blocked here, so there's nothing saved to clear
+}
 
 // Toast Function
 function showToast(message) {
