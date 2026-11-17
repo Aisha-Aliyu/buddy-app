@@ -91,13 +91,25 @@ document.addEventListener("DOMContentLoaded", function () {
 // --- Sign-up and sign-in ---
 // These run in js/account.js through Firebase once it has loaded. A tap before that just
 // gets a note here, and the forms have onsubmit="return false" so the browser never puts
-// the password in the page address.
-for (const form of document.querySelectorAll("#login-form, #signup-form")) {
-  form.addEventListener("submit", () => {
-    if (window.buddyAccountReady) return;
+// the password in the page address. If Firebase can't load at all, the page says so.
+{
+  const LOAD_FAILED = "Sign-in couldn't load. Please check your connection and refresh the page.";
+  const authForms = document.querySelectorAll("#login-form, #signup-form");
+  const showStatus = (form, message) => {
     const status = form.querySelector(".form-status");
-    if (status) status.textContent = "Still loading, please try again in a moment.";
-  });
+    if (!status) return;
+    status.textContent = message;
+    status.className = "form-status error";
+  };
+  for (const form of authForms) {
+    form.addEventListener("submit", () => {
+      if (window.buddyAccountReady) return;
+      showStatus(form, window.buddyAuthFailed ? LOAD_FAILED : "Still loading, please try again in a moment.");
+    });
+  }
+  const showLoadFailed = () => authForms.forEach((form) => showStatus(form, LOAD_FAILED));
+  if (window.buddyAuthFailed) showLoadFailed();
+  else window.addEventListener("buddy-auth-failed", showLoadFailed, { once: true });
 }
 
 // Older versions of the profile page saved the password in this browser in plain text.

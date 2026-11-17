@@ -108,10 +108,18 @@ test("chat route", { skip: missing }, async () => {
     assert.equal((await chat("hello", { ...visitor, Authorization: "Basic abc" })).status, 401);
     assert.equal(aiCalls, callsBefore);
 
-    // Firebase being unreachable is a 503, not a sign-out
+    // Firebase answering with an error, or not answering at all, is a 503, not a sign-out
     firebaseDown = true;
     assert.equal((await chat("hello", as("ada"))).status, 503);
     firebaseDown = false;
+    const firebaseUrl = process.env.FIREBASE_AUTH_URL;
+    const closed = http.createServer();
+    process.env.FIREBASE_AUTH_URL = `${await listen(closed)}/lookup`;
+    await new Promise((resolve) => closed.close(resolve));
+    const unreachable = await chat("hello", as("ada"));
+    assert.equal(unreachable.status, 503);
+    assert.match(unreachable.body.reply, /can't check your sign-in/);
+    process.env.FIREBASE_AUTH_URL = firebaseUrl;
 
     // Missing settings on the server give a clear 503
     delete process.env.FIREBASE_API_KEY;

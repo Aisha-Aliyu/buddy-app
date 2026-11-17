@@ -52,6 +52,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Saving the email and password, logging out and deleting the account are handled by
-  // js/account.js through Firebase
+  // js/account.js through Firebase. Until it has loaded, these buttons say why nothing happens.
+  for (const button of document.querySelectorAll("#saveProfile, .logout-btn, #deleteAccount")) {
+    button.addEventListener("click", () => {
+      if (window.buddyAccountReady) return;
+      alert(window.buddyAuthFailed
+        ? "Sign-in couldn't load. Please check your connection and refresh the page."
+        : "Still loading, please try again in a moment.");
+    });
+  }
 
 });

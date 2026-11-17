@@ -158,6 +158,7 @@ test("bad, expired or deleted-account tokens are refused", async () => {
     "bad.token.x": firebaseError("INVALID_ID_TOKEN"),
     "old.token.x": firebaseError("TOKEN_EXPIRED : The user's credential is no longer valid."),
     "gone.token.x": firebaseError("USER_NOT_FOUND"),
+    "banned.token.x": firebaseError("USER_DISABLED"),
     "off.token.x": [200, { users: [{ localId: "u2", disabled: true }] }],
     "none.token.x": [200, {}],
   };
@@ -185,5 +186,6 @@ test("Firebase being down or a wrong API key is an error, not a refusal", async 
   } finally {
     firebase.close();
   }
+  // Nothing listening any more: the connection itself fails
   await assert.rejects(lookupUser("a.b.c", { apiKey: "k", url: firebase.url }), AuthCheckError);
 });

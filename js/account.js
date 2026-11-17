@@ -9,7 +9,7 @@ import {
   updatePassword,
   verifyBeforeUpdateEmail,
   deleteUser,
-} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
 import { auth, currentUser, friendlyError } from "./firebase.js";
 
 const MIN_PASSWORD = 8;
@@ -141,7 +141,8 @@ document.getElementById("deleteAccount")?.addEventListener("click", async () => 
   if (!confirmDelete) return;
   try {
     const user = await currentUser();
-    if (user) await deleteUser(user);
+    if (!user) return alert("Please sign in first, then delete your account.");
+    await deleteUser(user);
   } catch (error) {
     return alert(friendlyError(error));
   }

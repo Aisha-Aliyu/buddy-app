@@ -1,9 +1,9 @@
 // Buddy's accounts run on Firebase Authentication, which stores the passwords, keeps
 // people signed in and slows down password guessing. The settings below identify the
 // Firebase project. They aren't secrets: Firebase expects them in the page.
-// Firebase JavaScript SDK 13.2.0 (https://www.npmjs.com/package/firebase), from Google's CDN.
-import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+// Firebase JavaScript SDK 13.3.0 (https://www.npmjs.com/package/firebase), from Google's CDN.
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDC78qlGic5AfAvcsqMteFX6y5OJRCyP40",

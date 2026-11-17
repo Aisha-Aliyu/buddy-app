@@ -71,6 +71,6 @@
   </main>
 
   <script src="js/profile.js"></script>
-  <script type="module" src="js/account.js"></script>
+  <script type="module" src="js/account.js" onerror="window.buddyAuthFailed = true; window.dispatchEvent(new Event('buddy-auth-failed'))"></script>
 </body>
 </html>

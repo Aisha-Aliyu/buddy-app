@@ -64,6 +64,6 @@ textarea.addEventListener('input', () => {
   </script>
 
   <script src="js/chat.js"></script>
-  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/firebase.js" onerror="window.buddyAuthFailed = true; window.dispatchEvent(new Event('buddy-auth-failed'))"></script>
 </body>
 </html>
