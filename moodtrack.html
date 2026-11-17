@@ -103,8 +103,13 @@
     applyDark(localStorage.getItem('darkMode') === 'true');
     document.getElementById('toggleDark')?.addEventListener('click', () => {
       const dark = !document.body.classList.contains('dark');
-      localStorage.setItem('darkMode', dark);
       applyDark(dark);
+      // If the browser can't save the choice (storage full or blocked), the page still switches
+      try {
+        localStorage.setItem('darkMode', dark);
+      } catch (error) {
+        console.warn("Couldn't save the dark mode choice:", error);
+      }
     });
   }
   </script>
