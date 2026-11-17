@@ -12,18 +12,6 @@ jobs:
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
-    services:
-      mongo:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-    env:
-      MONGODB_URI_TEST: mongodb://localhost:27017/buddy_test
     defaults:
       run:
         working-directory: backend
@@ -45,6 +33,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Check every script parses
-        run: for f in js/*.js; do node --check "$f"; done
+        # node --check passes module files (import/export) without really checking them,
+        # so those are fed through as modules instead
+        run: |
+          for f in js/*.js; do
+            if grep -qE '^(import|export) ' "$f"; then
+              node --input-type=module --check < "$f"
+            else
+              node --check "$f"
+            fi
+          done
       - name: Check pages only point at files that exist
         run: python3 .github/scripts/check_links.py

@@ -1,8 +1,6 @@
 // backend/app.js: the Express app, kept apart from server.js so tests can load it
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
-const authRoutes = require("./routes/auth");
 const chatRoute = require("./routes/chat");
 
 const app = express();
@@ -13,16 +11,10 @@ app.use(express.json({ limit: "20kb" }));
 
 app.get("/", (req, res) => res.json({ message: "Buddy API is running" }));
 
-// Used by the frontend to wake the free server early, and handy for checking the database
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    database: mongoose.connection.readyState === 1 ? "ok" : "unavailable",
-  });
-});
+// Used by the frontend to wake the free server early
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
-// Routes
-app.use("/api", authRoutes);
+// Accounts live in Firebase, so the chat is the only route
 app.use("/api/chat", chatRoute);
 
 app.use((req, res) => res.status(404).json({ message: "Not found." }));

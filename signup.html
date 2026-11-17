@@ -31,6 +31,7 @@
 
     <link rel="stylesheet" href="css/log-sign.css" />
     <script defer src="js/script.js"></script>
+    <script type="module" src="js/account.js"></script>
   </head>
   <body>
     <div class="login-container">
@@ -43,7 +44,7 @@
           Sign up now to access personalized mental health support and
           AI-powered wellness tools.
         </p>
-        <form id="signup-form">
+        <form id="signup-form" onsubmit="return false">
           <input id="fullname" type="name" placeholder="Full Name" name="fullname" autocomplete="name" maxlength="80" required />
           <input
             id="email" type="email"

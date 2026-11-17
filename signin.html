@@ -32,6 +32,7 @@
 
   <link rel="stylesheet" href="css/log-sign.css" />
   <script defer src="js/script.js"></script>
+  <script type="module" src="js/account.js"></script>
 </head>
 <body>
   <div class="login-container">
@@ -41,7 +42,7 @@
       </div>
       <h2>Sign In</h2>
       <p class="description">Sign in now to access personalized mental health support and AI-powered wellness tools.</p>
-      <form id="login-form">
+      <form id="login-form" onsubmit="return false">
         <input id="email" type="email" placeholder="Email Address" autocomplete="email" required />
         <input id="password" type="password" placeholder="Password" autocomplete="current-password" required />
         <div class="password-options">

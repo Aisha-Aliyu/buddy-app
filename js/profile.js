@@ -2,10 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggle = document.getElementById("darkModeToggle");
   const uploadPic = document.getElementById("uploadPic");
   const profilePic = document.getElementById("profilePic");
-  const saveBtn = document.getElementById("saveProfile");
-  const emailInput = document.getElementById("emailInput");
-  const passwordInput = document.getElementById("passwordInput");
-  const deleteBtn = document.getElementById("deleteAccount");
   const username = document.getElementById("username");
   const bio = document.getElementById("bio");
 
@@ -55,24 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bio.style.height = bio.scrollHeight + "px";
   });
 
-  // 📧 Save email + password
-  saveBtn.addEventListener("click", () => {
-    localStorage.setItem("profileEmail", emailInput.value);
-    localStorage.setItem("profilePassword", passwordInput.value);
-    alert("Profile updated!");
-  });
+  // Saving the email and password, logging out and deleting the account are handled by
+  // js/account.js through Firebase
 
-  if (localStorage.getItem("profileEmail")) {
-    emailInput.value = localStorage.getItem("profileEmail");
-  }
-
-  // ⚠️ Delete account
-  deleteBtn.addEventListener("click", () => {
-    const confirmDelete = confirm("⚠️ Are you sure you want to delete your account? This action is irreversible.");
-    if (confirmDelete) {
-      localStorage.clear();
-      alert("Your account has been deleted.");
-      window.location.href = "homepage.html";
-    }
-  });
 });

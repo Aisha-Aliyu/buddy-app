@@ -3,7 +3,7 @@ const API_URL = "https://buddy-app-xi0a.onrender.com";
 
 // The backend is on Render's free plan, which puts it to sleep when nobody has used it
 // for a while, and waking it takes up to a minute. Every page pings it as soon as it
-// opens, so by the time someone signs in it is usually awake.
+// opens, so by the time someone opens the chat it is usually awake.
 function wakeServer() {
   fetch(`${API_URL}/api/health`, { cache: "no-store" }).catch(() => {});
 }
@@ -89,114 +89,20 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // --- Sign-up and sign-in ---
-const AUTH_TIMEOUT_MS = 90000;
-const AUTH_RETRY_WINDOW_MS = 60000;
-const WAKING_NOTICE_MS = 3500;
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Sends the form to the backend. While Render wakes the server, the request can fail
-// before reaching it, so those failures are retried for a while.
-async function postToBackend(path, body) {
-  const giveUpAt = Date.now() + AUTH_RETRY_WINDOW_MS;
-  for (let attempt = 1; ; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
-    let response;
-    let data;
-    try {
-      response = await fetch(`${API_URL}${path}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-      // The timeout also covers reading the answer, which can stall on its own
-      data = await response.json().catch((error) => {
-        if (error.name === "AbortError") throw error;
-        return {};
-      });
-    } catch (error) {
-      if (error.name !== "AbortError" && Date.now() < giveUpAt) {
-        await sleep(Math.min(2000 * attempt, 8000));
-        continue;
-      }
-      return { ok: false, status: 0, data: {} };
-    } finally {
-      clearTimeout(timer);
-    }
-    // Render answers with its own error page while it is still starting the server
-    if (!data.message && [502, 503, 504].includes(response.status) && Date.now() < giveUpAt) {
-      await sleep(Math.min(2000 * attempt, 8000));
-      continue;
-    }
-    return { ok: response.ok, status: response.status, data, retried: attempt > 1 };
-  }
-}
-
-function setFormStatus(form, message, kind = "") {
-  const status = form.querySelector(".form-status");
-  if (!status) return showToast(message);
-  status.textContent = message;
-  status.className = "form-status" + (kind ? ` ${kind}` : "");
-}
-
-async function submitAuthForm(form, path, body, busyText, onSuccess) {
-  const button = form.querySelector('button[type="submit"]');
-  const buttonText = button.textContent;
-  button.disabled = true;
-  button.textContent = busyText;
-  setFormStatus(form, "");
-  const wakingNotice = setTimeout(() => {
-    setFormStatus(form, "Waking up the server. The first sign-in after a quiet spell can take up to a minute.");
-  }, WAKING_NOTICE_MS);
-
-  const result = await postToBackend(path, body);
-  clearTimeout(wakingNotice);
-  button.disabled = false;
-  button.textContent = buttonText;
-
-  // If the first sign-up attempt reached the server but its answer was lost, the retry
-  // finds the account already there. That account is almost certainly this one.
-  if (path === "/api/signup" && result.status === 409 && result.retried) return onSuccess({});
-  if (result.ok) return onSuccess(result.data);
-  if (result.status === 0) {
-    return setFormStatus(form, "Can't reach the server right now. Please check your connection and try again.", "error");
-  }
-  setFormStatus(form, result.data.message || "Something went wrong. Please try again.", "error");
-}
-
-// Sign-Up
-document.getElementById("signup-form")?.addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const form = e.currentTarget;
-  const name = document.getElementById("fullname").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  if (password.length < 8) {
-    return setFormStatus(form, "Your password needs at least 8 characters.", "error");
-  }
-
-  await submitAuthForm(form, "/api/signup", { fullname: name, email, password }, "Creating account...", (data) => {
-    localStorage.setItem("userName", data.name || name);
-    setFormStatus(form, "Account created. Taking you to sign in...", "success");
-    setTimeout(() => { window.location.href = "signin.html"; }, 900);
+// These run in js/account.js through Firebase once it has loaded. A tap before that just
+// gets a note here, and the forms have onsubmit="return false" so the browser never puts
+// the password in the page address.
+for (const form of document.querySelectorAll("#login-form, #signup-form")) {
+  form.addEventListener("submit", () => {
+    if (window.buddyAccountReady) return;
+    const status = form.querySelector(".form-status");
+    if (status) status.textContent = "Still loading, please try again in a moment.";
   });
-});
+}
 
-// Sign-In
-document.getElementById("login-form")?.addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const form = e.currentTarget;
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  await submitAuthForm(form, "/api/signin", { email, password }, "Signing in...", (data) => {
-    if (data.name) localStorage.setItem("userName", data.name);
-    window.location.href = "homepage.html";
-  });
-});
+// Older versions of the profile page saved the password in this browser in plain text.
+// Accounts live in Firebase now, so clear it out.
+localStorage.removeItem("profilePassword");
 
 // Toast Function
 function showToast(message) {

@@ -48,6 +48,17 @@ const moodPrompt = {
   Exhausted: "Remind them it’s okay to rest"
 };
 
+// js/firebase.js (a module) shares the signed-in user's ID token through window. It can
+// load a moment after this script, so wait for it, but not forever. Gives back the token,
+// null when nobody is signed in, or undefined if sign-in couldn't load.
+function signedInToken() {
+  const ready = window.buddyAuth
+    ? Promise.resolve(window.buddyAuth)
+    : new Promise((resolve) => window.addEventListener("buddy-auth-ready", () => resolve(window.buddyAuth), { once: true }));
+  const gaveUp = new Promise((resolve) => setTimeout(resolve, 15000, undefined));
+  return Promise.race([ready, gaveUp]).then((auth) => (auth ? auth.idToken() : undefined));
+}
+
 async function sendMessage() {
   const text = userInput.value.trim();
   if (!text) return;
@@ -55,6 +66,17 @@ async function sendMessage() {
   appendBubble(text, "user");
   userInput.value = "";
   userInput.style.height = "auto";
+
+  // The server only answers signed-in people, so the AI can't be used by anyone who finds it
+  let token;
+  try {
+    token = await signedInToken();
+  } catch (err) {
+    console.error("Couldn't get the sign-in token:", err);
+    return appendBubble("I couldn't check that you're signed in. Please check your connection and try again.", "bot");
+  }
+  if (token === undefined) return appendBubble("Sign-in didn't load. Please refresh the page and try again.", "bot");
+  if (!token) return appendBubble("Please sign in first so we can chat. You'll find Sign In on the welcome page.", "bot");
 
   typingIndicator.style.display = "block";
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -72,7 +94,7 @@ Their message: "${text}"`;
   try {
     const response = await fetch(`${API_URL}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ userMessage: text, mood }),
       signal: controller.signal
     });
