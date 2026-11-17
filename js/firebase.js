@@ -6,12 +6,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "FIREBASE_API_KEY",
-  authDomain: "FIREBASE_AUTH_DOMAIN",
-  projectId: "FIREBASE_PROJECT_ID",
-  storageBucket: "FIREBASE_STORAGE_BUCKET",
-  messagingSenderId: "FIREBASE_MESSAGING_SENDER_ID",
-  appId: "FIREBASE_APP_ID",
+  apiKey: "AIzaSyDC78qlGic5AfAvcsqMteFX6y5OJRCyP40",
+  authDomain: "buddy-15d98.firebaseapp.com",
+  projectId: "buddy-15d98",
+  storageBucket: "buddy-15d98.firebasestorage.app",
+  messagingSenderId: "265864877510",
+  appId: "1:265864877510:web:c11e5d67c65051b599cec7",
 };
 
 export const auth = getAuth(initializeApp(firebaseConfig));
