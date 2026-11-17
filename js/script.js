@@ -26,6 +26,20 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Skip Intro → straight home if this phone has signed in before, otherwise sign in
+  const skipIntroBtn = document.querySelector(".skip-intro-btn");
+  if (skipIntroBtn) {
+    skipIntroBtn.addEventListener("click", function () {
+      let signedInBefore = false;
+      try {
+        signedInBefore = Boolean(localStorage.getItem("userName"));
+      } catch {
+        // The browser blocks storage here, so treat this as a new visitor
+      }
+      window.location.href = signedInBefore ? "homepage.html" : "signin.html";
+    });
+  }
+
   // Personalized greeting
   const userName = localStorage.getItem("userName") || " User";
   const greetingName = document.getElementById("userGreetingName");

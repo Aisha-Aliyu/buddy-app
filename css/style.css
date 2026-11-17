@@ -1539,6 +1539,33 @@ input:checked + .slider::before {
   font-size: 18px;
 }
 
+/* The moon button sits in the header row instead of floating over the title */
+.moody .dark-toggle {
+  position: static;
+}
+
+/* Chart.js sizes a chart from its parent, so the canvas gets a parent of its own. The
+   card look moves from the canvas to that parent, so the chart is drawn at exactly the
+   size it's shown (padding on the canvas made Chart.js squash and blur it). */
+.mood-chart {
+  position: relative;
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+}
+
+.mood-chart canvas {
+  height: 320px !important;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.dark .mood-chart {
+  background: #2c2c2c;
+}
+
 .toggle-container {
   display: flex;
   align-items: center;
