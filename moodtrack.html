@@ -26,35 +26,75 @@
   <script>
   // Kept in its own block so these names can't clash with the shared script.js
   {
+    // A browser can block localStorage, and then reading it throws instead of giving null
+    const read = (key) => {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+
+    // Dark mode comes first, so the moon button works even if the chart can't load. The
+    // choice is shared with the other pages.
+    let moodChart = null;
+    const applyDark = (dark) => {
+      document.body.classList.toggle('dark', dark);
+      if (!moodChart) return;
+      const color = dark ? '#fff' : '#333';
+      moodChart.options.plugins.legend.labels.color = color;
+      moodChart.options.scales.x.ticks.color = color;
+      moodChart.options.scales.y.ticks.color = color;
+      moodChart.update();
+    };
+    applyDark(read('darkMode') === 'true');
+    document.getElementById('toggleDark')?.addEventListener('click', () => {
+      const dark = !document.body.classList.contains('dark');
+      applyDark(dark);
+      // If the browser can't save the choice (storage full or blocked), the page still switches
+      try {
+        localStorage.setItem('darkMode', dark);
+      } catch (error) {
+        console.warn("Couldn't save the dark mode choice:", error);
+      }
+    });
+
     // Mood values mapping (convert text moods → numeric)
-  const moodValues = {
-    "Sad": 1,
-    "Unhappy": 2,
-    "Neutral": 3,
-    "Happy": 4,
-    "Joyful": 5,
-    "Excited": 5,
-    "Angry": 2,
-    "Exhausted": 2,
-    "Tired": 2,
-    "Lost": 2,
-    "Calm": 4,
-    "Anxious": 2
-  };
+    const moodValues = {
+      "Sad": 1,
+      "Unhappy": 2,
+      "Neutral": 3,
+      "Happy": 4,
+      "Joyful": 5,
+      "Excited": 5,
+      "Angry": 2,
+      "Exhausted": 2,
+      "Tired": 2,
+      "Lost": 2,
+      "Calm": 4,
+      "Anxious": 2
+    };
 
-  // Fetch saved moods from localStorage
-  let moodLogs = JSON.parse(localStorage.getItem("checkins")) || [];
+    // Saved moods from localStorage (an unreadable list counts as empty)
+    let moodLogs = [];
+    try {
+      const saved = JSON.parse(read("checkins"));
+      if (Array.isArray(saved)) moodLogs = saved;
+    } catch {
+      console.warn("The saved check-ins couldn't be read");
+    }
 
-  // Sort by date
-  moodLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Sort by date
+    moodLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Extract labels (dates) & mood scores
-  const labels = moodLogs.map(entry => new Date(entry.date).toLocaleDateString());
-  const dataPoints = moodLogs.map(entry => moodValues[entry.mood] || 3);
+    // Extract labels (dates) & mood scores
+    const labels = moodLogs.map(entry => new Date(entry.date).toLocaleDateString());
+    const dataPoints = moodLogs.map(entry => moodValues[entry.mood] || 3);
 
-    // Setup Chart.js
-    const ctx = document.getElementById('moodChart').getContext('2d');
-    const moodChart = new Chart(ctx, {
+    // Setup Chart.js. If it couldn't load (no connection, say), the card says so instead.
+    try {
+      const ctx = document.getElementById('moodChart').getContext('2d');
+      moodChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: labels.length ? labels : ["No data yet"],
@@ -90,27 +130,11 @@
         }
       }
     });
-
-    // Dark mode: the moon button switches it, and the choice is shared with the other pages
-    const applyDark = (dark) => {
-      document.body.classList.toggle('dark', dark);
-      const color = dark ? '#fff' : '#333';
-      moodChart.options.plugins.legend.labels.color = color;
-      moodChart.options.scales.x.ticks.color = color;
-      moodChart.options.scales.y.ticks.color = color;
-      moodChart.update();
-    };
-    applyDark(localStorage.getItem('darkMode') === 'true');
-    document.getElementById('toggleDark')?.addEventListener('click', () => {
-      const dark = !document.body.classList.contains('dark');
-      applyDark(dark);
-      // If the browser can't save the choice (storage full or blocked), the page still switches
-      try {
-        localStorage.setItem('darkMode', dark);
-      } catch (error) {
-        console.warn("Couldn't save the dark mode choice:", error);
-      }
-    });
+      applyDark(document.body.classList.contains('dark'));
+    } catch (error) {
+      console.error("Couldn't draw the mood chart:", error);
+      document.querySelector('.mood-chart').textContent = "The mood chart couldn't load. Please check your connection and refresh the page.";
+    }
   }
   </script>
 </body>

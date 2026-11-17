@@ -30,7 +30,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const skipIntroBtn = document.querySelector(".skip-intro-btn");
   if (skipIntroBtn) {
     skipIntroBtn.addEventListener("click", function () {
-      window.location.href = localStorage.getItem("userName") ? "homepage.html" : "signin.html";
+      let signedInBefore = false;
+      try {
+        signedInBefore = Boolean(localStorage.getItem("userName"));
+      } catch {
+        // The browser blocks storage here, so treat this as a new visitor
+      }
+      window.location.href = signedInBefore ? "homepage.html" : "signin.html";
     });
   }
 
